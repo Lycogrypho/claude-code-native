@@ -314,6 +314,16 @@ interface WiredEl extends HTMLElement {
   __wired?: boolean;
 }
 
+interface HistoryNav {
+  index: number;
+  draft: string;
+}
+
+interface HistoryMove {
+  nav: HistoryNav;
+  text: string;
+}
+
 interface ComposerNs {
   h(tag: string, props?: HProps | null, ...children: Child[]): HTMLElement;
   send(obj: unknown): void;
@@ -377,6 +387,9 @@ interface ComposerNs {
   applyFollow(): void;
   sendGlyph(): string;
   wireInput(input: HTMLTextAreaElement): void;
+  historyStep(nav: HistoryNav, prompts: string[], dir: number, current: string): HistoryMove | null;
+  wireHistory(input: HTMLTextAreaElement): void;
+  renderFold(s: ComposerState): void;
   onSendClick(e: Event): void;
   setGhost(text: string): void;
   renderGhost(): void;

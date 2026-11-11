@@ -44,6 +44,13 @@
 .msg-head .who {
   color: var(--text);
 }
+.msg.user {
+  padding-left: 11px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.msg.user .msg-head .name {
+  color: var(--accent);
+}
 
 .act,
 .copy {
@@ -82,6 +89,7 @@
 
 .msg.user .body {
   padding: 0 1px;
+  color: color-mix(in srgb, var(--accent) 30%, var(--text));
   word-break: break-word;
   overflow-wrap: anywhere;
 }

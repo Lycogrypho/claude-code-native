@@ -1,0 +1,41 @@
+.dock-fold {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 18px;
+  margin: -6px 0 4px;
+}
+#dock.folded .dock-fold {
+  justify-content: space-between;
+  margin: -4px 0 -6px;
+}
+.dock-fold-phase {
+  color: var(--dim);
+  font-size: 12px;
+}
+#dock:not(.folded) .dock-fold-phase {
+  display: none;
+}
+.dock-fold-btn {
+  padding: 1px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    color 0.14s,
+    background-color 0.14s;
+}
+.dock-fold-btn:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+#dock.folded #composer,
+#dock.folded #controls,
+#dock.folded #palette {
+  display: none;
+}

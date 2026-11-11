@@ -135,6 +135,9 @@ secrets.yaml
 !/docs/trust-chain.asc
 PROJECTMAP.md
 **/PROJECTMAP.md
+/ToDo.md
+/Done.md
+/DesignNotes.md
 
 # Anchored, because this holds whole checkouts: an assistant working in isolated worktrees puts them
 # under .claude/worktrees/, and an unanchored pattern would also hide a real directory of that name

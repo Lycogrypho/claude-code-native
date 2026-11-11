@@ -134,6 +134,7 @@
     }
 
     CX.wireInput(input);
+    CX.wireHistory(input);
     CX.wireImageDrop(card);
     CX.wireImagePaste(input);
 
@@ -160,6 +161,7 @@
     CX.renderPills(s);
     CX.renderQueue(s.queue);
     CX.renderReadout(s);
+    CX.renderFold(s);
     CX.setGhost(s.suggestion != null ? String(s.suggestion) : '');
     CX.renderGhost();
     CX.syncOpenMenu();

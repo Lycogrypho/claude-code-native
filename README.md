@@ -383,7 +383,9 @@ claude.ai/code or the mobile app; the guard still decides first, on this machine
 
 Keyboard: `Enter` send · `Shift+Enter` newline · `Esc` close a menu or interrupt · `Ctrl/Cmd+F` find ·
 `Ctrl/Cmd+O` fold all reasoning · `/` the slash-command palette · `Tab` on an empty composer takes the
-suggested next prompt.
+suggested next prompt · `↑`/`↓` recall this chat's earlier prompts (on the first or last line of the box) ·
+`Ctrl+Shift+↓`/`Ctrl+Shift+↑` fold and unfold the input area, to give the transcript the room — typing
+anywhere unfolds it again.
 
 ## Security
 

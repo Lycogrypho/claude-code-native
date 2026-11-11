@@ -17,6 +17,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Every question Claude asks ends with an Other choice.** Picking it opens a text field, and the answer
   sent back is what was typed, joined with any options also chosen on a multi-select. An `Other` the model
   supplied itself is folded into this one, so the card never shows two.
+- **↑ and ↓ recall the prompts already sent in this chat.** ↑ works with the caret on the box's first line
+  and ↓ on its last, so a multi-line prompt stays editable; the draft in progress comes back past the
+  newest entry. The history is the chat's own transcript, so nothing new is stored.
+- **The input area folds away.** A toggle at the top of the dock, or `Ctrl+Shift+↓`, hides the prompt box
+  and its controls and leaves a one-line strip that tells what Claude is doing; `Ctrl+Shift+↑`, the strip's
+  button or simply typing brings it back. Permission and question cards stay visible while folded.
+
+### Changed
+- **Your own messages stand out in the transcript**: tinted text, an accented "You" and a thin accent bar
+  on the left edge, all taken from the theme, so they follow light and dark themes. Still a row, not a
+  card.
 
 ## [6.0.1] — 2026-09-22
 
