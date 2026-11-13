@@ -85,10 +85,19 @@ class MetaTools(private val catalog: ToolCatalog, private val gate: ToolGate, pr
         val tool = catalog.tool(name) ?: return ToolResult.error("unknown tool $name; call domains() then tools(domain)")
         gate.denial(tool.spec, arguments)?.let { return ToolResult.error(it) }
         val args = arguments["args"]?.let { it as? JsonObject } ?: JsonObject(emptyMap())
+        undeclared(tool.spec, args)?.let { return ToolResult.error(it) }
         val toolUseId = (meta[OwnTools.TOOL_USE_ID_KEY] as? JsonPrimitive)?.content
         val result = runCatching { withTimeout(tool.spec.timeoutMillis) { tool.run(ToolArgs(args, toolUseId)) } }
             .getOrElse { failure(name, tool.spec.timeoutMillis, it) }
         return ToolResult(budget.fit(result.text), result.isError)
+    }
+
+    private fun undeclared(spec: ToolSpec, args: JsonObject): String? {
+        val declared = spec.params.map { it.name }
+        val unknown = args.keys.filterNot { it in declared }
+        if (unknown.isEmpty()) return null
+        val takes = if (declared.isEmpty()) "it takes no arguments" else "it takes ${declared.joinToString()}"
+        return "${spec.name} does not take ${unknown.joinToString()}; $takes"
     }
 
     private fun failure(name: String, timeoutMillis: Long, cause: Throwable): ToolResult = when (cause) {

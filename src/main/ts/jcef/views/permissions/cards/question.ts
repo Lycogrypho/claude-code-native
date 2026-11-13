@@ -28,6 +28,7 @@
         selections[qText] = [label];
       }
       syncSelected();
+      refreshSubmit();
       if (label === OTHER && selections[qText].indexOf(OTHER) >= 0) otherInputs[qText].focus();
     }
 
@@ -58,6 +59,7 @@
         class: 'q-other-input',
         attrs: { type: 'text', placeholder: 'Type your own answer', hidden: 'hidden' },
       }) as HTMLInputElement;
+      input.addEventListener('input', refreshSubmit);
       otherInputs[qText] = input;
       return input;
     }
@@ -99,6 +101,24 @@
         .join(', ');
     }
 
+    function complete(): boolean {
+      return Object.keys(selections).every(function (qText) {
+        return answerFor(qText) !== '';
+      });
+    }
+
+    const submit = PM.answer({ class: 'btn primary', text: 'Submit' }, function () {
+      const answers: Record<string, string> = {};
+      Object.keys(selections).forEach(function (qText) {
+        answers[qText] = answerFor(qText);
+      });
+      PM.sendFor(card, { type: 'resolveQuestion', id: id, answers: answers });
+    }) as HTMLButtonElement;
+
+    function refreshSubmit(): void {
+      submit.disabled = PM.answered(submit) || !complete();
+    }
+
     const root = h(
       'div',
       { class: 'perm-card q-card' },
@@ -107,14 +127,8 @@
       h(
         'div',
         { class: 'perm-actions' },
-        PM.button({ class: 'btn primary', text: 'Submit' }, function () {
-          const answers: Record<string, string> = {};
-          Object.keys(selections).forEach(function (qText) {
-            answers[qText] = answerFor(qText);
-          });
-          PM.sendFor(card, { type: 'resolveQuestion', id: id, answers: answers });
-        }),
-        PM.button({ class: 'btn ghost', text: 'Cancel' }, function () {
+        submit,
+        PM.answer({ class: 'btn ghost', text: 'Cancel' }, function () {
           PM.sendFor(card, { type: 'resolvePermission', id: id, allow: false });
         })
       )
@@ -134,6 +148,7 @@
       });
     }
     syncSelected();
+    refreshSubmit();
     return root;
   };
 })();

@@ -35,7 +35,6 @@
   background: var(--surface);
 }
 #dock.folded #composer,
-#dock.folded #controls,
-#dock.folded #palette {
+#dock.folded #controls {
   display: none;
 }

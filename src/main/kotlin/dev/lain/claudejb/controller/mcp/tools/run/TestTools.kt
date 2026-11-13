@@ -4,9 +4,11 @@ import com.intellij.execution.PsiLocation
 import com.intellij.execution.RunManager
 import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.execution.actions.ConfigurationContext
+import com.intellij.execution.actions.ConfigurationFromContext
 import com.intellij.execution.testframework.sm.runner.SMTRunnerEventsListener
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.application.readAction
+import com.intellij.openapi.externalSystem.service.execution.ExternalSystemRunConfiguration
 import com.intellij.openapi.project.IndexNotReadyException
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
@@ -107,7 +109,7 @@ internal class TestTools(private val project: Project, scope: CoroutineScope) {
             }
             val context = ConfigurationContext.createEmptyContextForLocation(PsiLocation(project, element ?: psiFile))
             val offered = context.configurationsFromContext.orEmpty()
-            (offered.firstOrNull { it.configurationType.id != GRADLE_TYPE } ?: offered.firstOrNull())?.configurationSettings
+            TestRunChoice.pick(offered, { it.configurationType.id == GRADLE_TYPE }) { gradleTasks(it) }?.configurationSettings
         } ?: throw ToolException("the IDE offers no test run for $path; is it a test file, and is its framework's plugin enabled?")
         withContext(Dispatchers.EDT) {
             val manager = RunManager.getInstance(project)
@@ -115,6 +117,9 @@ internal class TestTools(private val project: Project, scope: CoroutineScope) {
         }
         return settings
     }
+
+    private fun gradleTasks(offer: ConfigurationFromContext): List<String> =
+        (offer.configuration as? ExternalSystemRunConfiguration)?.settings?.taskNames.orEmpty()
 
     private suspend fun run(settings: RunnerAndConfigurationSettings, tail: OutputTail): TestOutcome {
         val listener = TestRunListener(tail)

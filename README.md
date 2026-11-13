@@ -433,7 +433,7 @@ through the IDE's account, and to the public Marketplace API when you ask about 
 | **Restore open chats on startup** | on | Start with a single empty chat |
 | **Allowed / disallowed tools**, **Always-allowed tools** | empty | Stop being asked about a tool; the guard still decides first |
 | **Environment variables**, **Source script** | empty | Seed the binary's environment; the script runs at session start behind a per-project trust prompt |
-| **Custom MCP servers** | empty | Your own servers as a JSON object, merged into one `--mcp-config` |
+| **Custom MCP servers** | empty | Your own servers as a JSON object of name → config, merged into one `--mcp-config`; Claude's own `mcpServers` block can be pasted as it is |
 | **Advanced launch** | flags omitted | `--max-turns`, `--max-budget-usd`, `--fallback-model`, `--add-dir`, betas, strict MCP config |
 
 Settings are per IDE installation and per project; credentials and host tokens are global. **Transfer**

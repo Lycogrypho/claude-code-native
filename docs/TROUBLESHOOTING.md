@@ -249,14 +249,39 @@ support itself is tracked under
 
 ## MCP servers do not load
 
-- The JetBrains MCP server toggle requires the **MCP Server** plugin from
-  JetBrains to be installed and enabled.
-- For `stdio` transport the plugin synthesizes a command line from the
-  running IDE's `mcpserver` lib. If you launched the IDE from a stripped
-  install, that lib may be missing — switch to `sse` or
-  `streamable-http`.
-- Custom MCP entries must be valid JSON keyed by server name. Invalid JSON
-  blocks saving the settings and is logged.
+**The plugin's own servers** (`code`, `run`, `vcs`, `ops`) need nothing
+installed: they are part of the plugin and listen on Unix sockets, with no
+port.
+
+- They start only when **Settings → Claude Code → Claude IDE Integration →
+  Enable this plugin's own servers** is on.
+- A missing IDE plugin hides what depends on it and nothing else. Without
+  the Git plugin the whole `vcs` server is absent; without the Java plugin
+  the `uast` domain is; the HTTP Client and SSH domains of `ops` appear
+  only where the IDE has those features.
+- If the servers could not start, the session runs without them and the
+  log says `The IDE MCP servers could not start`.
+
+**Custom servers** (Settings → Claude Code → Custom MCP Servers) are a JSON
+object that maps each server name to its config:
+
+```json
+{
+  "files": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "."] },
+  "docs": { "type": "http", "url": "https://example.com/mcp" }
+}
+```
+
+- `type` is `stdio` (the default, with `command` and `args`), `http` or
+  `sse` (with `url`). There is no `streamable-http` value: it is `http`.
+- Claude's own `{ "mcpServers": { … } }` can be pasted as it is; the
+  wrapper is removed when the settings are applied.
+- Anything else blocks saving, and the message names the entry at fault: a
+  value that is not a JSON object, a name that does not map to a config
+  object, or an `mcpServers` wrapper beside other servers.
+- A server with a `command` runs a program on your machine. Until you have
+  trusted the execution configuration once, starting a session asks for it,
+  and cancelling stops the launch.
 
 ## Logs
 

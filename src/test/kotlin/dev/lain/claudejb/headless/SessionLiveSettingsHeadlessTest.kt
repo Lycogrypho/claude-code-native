@@ -45,6 +45,20 @@ class SessionLiveSettingsHeadlessTest : BasePlatformTestCase() {
         assertEquals(1, settings.state.thinkingTokens)
     }
 
+    fun `test adopting new launch settings takes every field at once and keeps the session id`() {
+        val next = LaunchOptions.from(settings).copy(
+            model = "haiku",
+            effort = "high",
+            permissionMode = "plan",
+            thinkingTokens = 1,
+            betas = "beta-x",
+            sessionId = "not-this-one",
+        )
+        val kept = session.launch.sessionId
+        session.settings.adopt(next)
+        assertEquals(next.copy(sessionId = kept), session.launch)
+    }
+
     fun `test adopting the stored settings changes the session and leaves the store as it was`() {
         settings.update { it.model = "haiku" }
         session.settings.changeModel("sonnet", persist = false)

@@ -12,6 +12,7 @@ import dev.lain.claudejb.view.feed.ChatTheme
 import dev.lain.claudejb.view.payload.menu.JcefSettingsMenu
 import dev.lain.claudejb.view.settings.ClaudeSettingsConfigurable
 import dev.lain.claudejb.view.window.JcefChatPanel
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal class BridgeSettings(private val panel: JcefChatPanel) {
 
@@ -74,8 +75,9 @@ internal class BridgeSettings(private val panel: JcefChatPanel) {
         }
         val scope = settings.scope.id
         val models = session.catalog.models.map { it.value }
-        if (!JcefSettingsMenu.apply(scope, settings.state, m.key, m.on, models)) return false
-        settings.update { JcefSettingsMenu.apply(scope, it, m.key, m.on, models) }
+        val known = AtomicBoolean()
+        settings.update { state -> known.set(JcefSettingsMenu.apply(scope, state, m.key, m.on, models)) }
+        if (!known.get()) return false
         ChatSessionManager.getInstance(panel.project).adoptSettings()
         return true
     }

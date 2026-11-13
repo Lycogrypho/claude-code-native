@@ -113,6 +113,31 @@ class ToolModelTest {
     }
 
     @Test
+    fun `an argument the tool does not declare is refused, naming the ones it takes`() = runBlocking {
+        var ran = false
+        val tool = Tool(ToolSpec("search", "", listOf(Param("query", ""), Param("path", "", required = false)))) {
+            ran = true
+            ToolResult("ok")
+        }
+        val meta = MetaTools(ToolCatalog(listOf(ToolDomain("d", "", listOf(tool)))), { _, _ -> null }, OutputBudget())
+        val refused = meta.call("run", parse("""{"tool":"search","args":{"query":"x","paths":["a"]}}"""))!!
+        assertTrue(refused.isError)
+        assertTrue(refused.text.contains("search does not take paths; it takes query, path")) { refused.text }
+        assertFalse(ran)
+        assertEquals("ok", meta.call("run", parse("""{"tool":"search","args":{"query":"x","path":"src"}}"""))!!.text)
+    }
+
+    @Test
+    fun `a single long line is cut at the budget, not thrown away whole`() {
+        val budget = OutputBudget(200)
+        val toon = "path: a.kt\ntext: \"" + "word ".repeat(200) + "\""
+        val fitted = budget.fit(toon)
+        assertTrue(fitted.length <= 200) { fitted }
+        assertTrue(fitted.contains("text: \"word word")) { fitted }
+        assertTrue(fitted.lines().last().startsWith("# truncated: ")) { fitted }
+    }
+
+    @Test
     fun `the budget cuts on a line boundary and says so in a comment line`() {
         val budget = OutputBudget(120)
         val text = (1..40).joinToString("\n") { "line $it" }

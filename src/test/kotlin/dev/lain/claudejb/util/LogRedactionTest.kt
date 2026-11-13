@@ -51,8 +51,8 @@ class LogRedactionTest {
     fun `the home directory collapses to a tilde, in either slash direction`() {
         assertEquals("read ~/.claude.json", LogRedaction.apply("read /home/lain/.claude.json"))
 
-        LogRedaction.home = "C:\\Users\\Lain"
-        assertEquals("read ~\\x and ~/y", LogRedaction.apply("read C:\\Users\\Lain\\x and C:/Users/Lain/y"))
+        LogRedaction.home = "C:\\Users\\Lycogrypho"
+        assertEquals("read ~\\x and ~/y", LogRedaction.apply("read C:\\Users\\Lycogrypho\\x and C:/Users/Lycogrypho/y"))
     }
 
     @Test

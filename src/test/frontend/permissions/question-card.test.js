@@ -49,7 +49,9 @@ describe('question card — the Other answer', () => {
     const win = loadFrontend(['app-permissions.js']);
     win.cc.permissions([questionCard(false, [{ label: 'A' }])]);
     clickOption(win, 'Other');
-    win.CC.els.permissions.querySelector('.q-other-input').value = '  something else  ';
+    const input = win.CC.els.permissions.querySelector('.q-other-input');
+    input.value = '  something else  ';
+    input.dispatchEvent(new win.Event('input'));
     expect(submit(win)).toContainEqual({
       type: 'resolveQuestion',
       id: 'q1',

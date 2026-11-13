@@ -77,7 +77,7 @@ internal class HierarchyTools(private val project: Project) {
         private fun callersOf(element: PsiElement): List<PsiElement> {
             val out = LinkedHashSet<PsiElement>()
             ReferencesSearch.search(element, GlobalSearchScope.projectScope(project)).forEach { reference ->
-                PsiTreeUtil.getParentOfType(reference.element, PsiNameIdentifierOwner::class.java, true)?.let { out += it }
+                callerOf(reference.element)?.let { out += it }
                 out.size < max
             }
             return out.toList()
@@ -119,6 +119,15 @@ internal class HierarchyTools(private val project: Project) {
     private fun name(element: PsiElement): String = (element as? PsiNamedElement)?.name ?: ""
 
     companion object {
+
+        fun callerOf(usage: PsiElement): PsiElement? =
+            (if (JavaAvailability.isEnabled()) UastTools.enclosingDeclaration(usage) else null) ?: nearestNamedOwner(usage)
+
+        private fun nearestNamedOwner(usage: PsiElement): PsiElement? =
+            generateSequence(owner(usage), ::owner).firstOrNull { !it.name.isNullOrBlank() }
+
+        private fun owner(element: PsiElement): PsiNameIdentifierOwner? =
+            PsiTreeUtil.getParentOfType(element, PsiNameIdentifierOwner::class.java, true)
 
         private const val CALLERS = "callers"
         private const val CALLEES = "callees"

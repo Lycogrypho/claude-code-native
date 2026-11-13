@@ -89,6 +89,57 @@ describe('prompt history — the arrows recall what this tab already sent', () =
     expect(input.value).toBe('');
   });
 
+  it('never recalls "undefined" after the transcript is rebuilt shorter', () => {
+    const { win, input } = setup(['a', 'b', 'c']);
+    key(win, input, 'ArrowUp');
+    key(win, input, 'ArrowUp');
+    key(win, input, 'ArrowUp');
+    win.cc.clear();
+    win.cc.batch([{ id: 9, order: 0, speaker: 'USER', text: 'x', state: 'FINISHED', elapsed: 0 }]);
+    key(win, input, 'ArrowUp');
+    expect(input.value).toBe('x');
+    key(win, input, 'ArrowDown');
+    expect(input.value).not.toBe('undefined');
+  });
+
+  it('moves the caret up a wrapped line instead of recalling when it is not at the start', () => {
+    const { win, input } = setup(['first']);
+    input.value = 'a single line long enough to wrap';
+    input.setSelectionRange(10, 10);
+    expect(key(win, input, 'ArrowUp').defaultPrevented).toBe(false);
+    expect(input.value).toBe('a single line long enough to wrap');
+  });
+
+  it('recalls the Git chat prompts while the Git chat is shown', () => {
+    const { win, input } = setup(['main chat prompt']);
+    const rows = win.document.createElement('div');
+    rows.innerHTML = '<div class="msg user"><div class="body"></div></div>';
+    rows.querySelector('.body').__rawText = 'git chat prompt';
+    const saved = { active: win.CC.gitChatActive, rows: win.CC.gitChatRows };
+    try {
+      win.CC.gitChatActive = () => true;
+      win.CC.gitChatRows = () => rows;
+      key(win, input, 'ArrowUp');
+      expect(input.value).toBe('git chat prompt');
+    } finally {
+      win.CC.gitChatActive = saved.active;
+      win.CC.gitChatRows = saved.rows;
+    }
+  });
+
+  it('repaints the ghost suggestion after a recall', () => {
+    const { win, input } = setup(['first']);
+    const saved = win.CC.composer.renderGhost;
+    let painted = 0;
+    try {
+      win.CC.composer.renderGhost = () => painted++;
+      key(win, input, 'ArrowUp');
+      expect(painted).toBe(1);
+    } finally {
+      win.CC.composer.renderGhost = saved;
+    }
+  });
+
   it('does nothing when the tab has sent nothing yet', () => {
     const { win, input } = setup([]);
     expect(key(win, input, 'ArrowUp').defaultPrevented).toBe(false);

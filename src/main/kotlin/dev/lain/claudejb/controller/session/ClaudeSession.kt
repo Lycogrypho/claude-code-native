@@ -182,9 +182,7 @@ class ClaudeSession(
 
     fun send(text: String, attachments: List<Attachment>) {
         val composed = PromptComposer.compose(text, attachments, project.basePath) ?: return
-        if (!isRunning()) {
-            if (!start()) return
-        }
+        if (!isRunning()) start()
         prompts.enqueue(composed.wireText, composed.images, composed.displayText)
     }
 
@@ -192,8 +190,8 @@ class ClaudeSession(
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return
         if (!isRunning()) {
-            if (!start()) return
-            prompts.enqueue(trimmed, emptyList(), trimmed)
+            start()
+            systemNotice("$SIDE_QUESTION_NEEDS_SESSION $trimmed")
             return
         }
         edt {
@@ -230,5 +228,7 @@ class ClaudeSession(
 
     private companion object {
         const val SIDE_QUESTION_UNANSWERED = "↩ The side question was not answered."
+        const val SIDE_QUESTION_NEEDS_SESSION =
+            "A side question needs a running conversation; ask it again once Claude Code is ready:"
     }
 }

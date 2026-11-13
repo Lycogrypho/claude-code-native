@@ -45,8 +45,14 @@
     toggle.title = hint;
     toggle.setAttribute('aria-label', hint);
     toggle.setAttribute('aria-expanded', String(!folded));
-    if (foldable) strip.removeAttribute('hidden');
-    else strip.setAttribute('hidden', 'hidden');
+    if (foldable) {
+      strip.removeAttribute('hidden');
+      return;
+    }
+    const stranded = strip.contains(document.activeElement);
+    strip.setAttribute('hidden', 'hidden');
+    const input = CX.els && CX.els.input;
+    if (stranded && input) input.focus();
   }
 
   function phaseOf(s: ComposerState): string {
@@ -63,7 +69,9 @@
     if (next !== folded) {
       const tx = CC.transcript;
       const stick = !!(tx && tx.stickToBottom && tx.stickToBottom());
-      const hadFocus = !!input && document.activeElement === input;
+      const d = dock();
+      const active = document.activeElement;
+      const hadFocus = !!d && !!active && d.contains(active) && !(strip && strip.contains(active));
       folded = next;
       paint();
       if (folded && hadFocus && toggle) toggle.focus();
@@ -81,11 +89,20 @@
     paint();
   };
 
-  function editable(target: EventTarget | null): boolean {
+  CC.refreshFold = function (): void {
+    if (CX.lastState) CX.renderFold(CX.lastState);
+  };
+
+  function readingTranscript(target: EventTarget | null): boolean {
     const el = target as HTMLElement | null;
     if (!el || !el.tagName) return false;
+    if (el === document.body) return true;
+    const conversation = document.getElementById('conversation');
     return (
-      el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable
+      !!conversation &&
+      conversation.contains(el) &&
+      !el.isContentEditable &&
+      !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)
     );
   }
 
@@ -104,7 +121,7 @@
       setFolded(fold, !fold);
       return;
     }
-    if (!folded || e.target === toggle || editable(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.key.length === 1 || e.key === 'ArrowUp') setFolded(false, true);
+    if (!folded || !readingTranscript(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key.length === 1) setFolded(false, true);
   });
 })();

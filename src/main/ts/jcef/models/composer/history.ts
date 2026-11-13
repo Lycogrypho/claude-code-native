@@ -17,13 +17,15 @@
     current: string
   ): HistoryMove | null {
     const list = withoutRepeats(prompts);
+    const at = nav.index >= 0 && list[nav.index] === current ? nav.index : list.length;
+    const draft = nav.index < 0 ? current : nav.draft;
     if (dir < 0) {
-      const index = nav.index < 0 ? list.length - 1 : nav.index - 1;
+      const index = at - 1;
       if (index < 0) return null;
-      return { nav: { index: index, draft: nav.index < 0 ? current : nav.draft }, text: list[index] };
+      return { nav: { index: index, draft: draft }, text: list[index] };
     }
     if (nav.index < 0) return null;
-    const index = nav.index + 1;
+    const index = at + 1;
     if (index >= list.length) return { nav: { index: -1, draft: '' }, text: nav.draft };
     return { nav: { index: index, draft: nav.draft }, text: list[index] };
   };

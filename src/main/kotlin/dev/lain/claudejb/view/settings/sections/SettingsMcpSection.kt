@@ -7,13 +7,13 @@ import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_WORD_WRAP
 import com.intellij.ui.dsl.builder.Panel
 import dev.lain.claudejb.model.settings.ClaudeSettings
-import dev.lain.claudejb.model.settings.LaunchDefaults
+import dev.lain.claudejb.model.settings.McpConfigShape
 import dev.lain.claudejb.view.settings.SettingsSection
 
 internal class SettingsMcpSection : SettingsSection {
 
     private val customMcpArea = JBTextArea(CUSTOM_MCP_ROWS, 0).apply {
-        emptyText.text = "JSON object of name → server config; add as many as you like (sse / streamable-http / stdio)"
+        emptyText.text = "JSON object of name → server config; add as many as you like (stdio / http / sse)"
     }
     private val strictMcpCheck = JBCheckBox("Strict MCP config (only use servers from --mcp-config)")
 
@@ -30,19 +30,20 @@ internal class SettingsMcpSection : SettingsSection {
         strictMcpCheck.isSelected = s.strictMcpConfig
     }
 
+    private fun servers(): String = McpConfigShape.unwrap(customMcpArea.text.trim())
+
     override fun validate() {
-        if (!LaunchDefaults.isValidMcpConfig(customMcpArea.text.trim())) {
-            throw ConfigurationException("Custom MCP servers must be a JSON object mapping each server name to its config.")
-        }
+        McpConfigShape.problem(servers())?.let { throw ConfigurationException(it) }
     }
 
     override fun apply(s: ClaudeSettings.State) {
-        s.customMcpServers = customMcpArea.text.trim()
+        s.customMcpServers = servers()
         s.strictMcpConfig = strictMcpCheck.isSelected
+        customMcpArea.text = s.customMcpServers
     }
 
     override fun changedFields(s: ClaudeSettings.State): List<Boolean> = listOf(
-        customMcpArea.text.trim() != s.customMcpServers,
+        servers() != s.customMcpServers,
         strictMcpCheck.isSelected != s.strictMcpConfig,
     )
 
@@ -50,7 +51,11 @@ internal class SettingsMcpSection : SettingsSection {
         const val CUSTOM_MCP_ROWS = 7
 
         const val CUSTOM_MCP_NOTE =
-            "A JSON object of name → server config: <code>{ \"name\": { \"type\": \"…\", … } }</code>. " +
+            "A JSON object of name → server config. A local server: <code>{ \"files\": " + McpConfigShape.STDIO_EXAMPLE +
+                " }</code>. A remote one: <code>{ \"docs\": " + McpConfigShape.HTTP_EXAMPLE + " }</code>. " +
+                "<code>type</code> is <code>stdio</code> (the default, with <code>command</code> and <code>args</code>), " +
+                "<code>http</code> or <code>sse</code> (with <code>url</code>). Claude's own " +
+                "<code>{ \"mcpServers\": { … } }</code> can be pasted as it is: the wrapper is removed on Apply. " +
                 "⚠ Third-party servers run with your privileges and can read what you share with them."
     }
 }

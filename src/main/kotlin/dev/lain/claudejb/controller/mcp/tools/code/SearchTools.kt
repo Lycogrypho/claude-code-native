@@ -29,8 +29,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
-import java.nio.file.FileSystems
-import java.nio.file.Path
 import java.util.Collections
 
 internal class SearchTools(private val project: Project, private val io: CoroutineDispatcher = Dispatchers.IO) {
@@ -65,19 +63,19 @@ internal class SearchTools(private val project: Project, private val io: Corouti
                 coroutineToIndicator { indicator ->
                     FindInProjectUtil.findUsages(model, project, indicator, PRESENTATION, emptySet()) { info ->
                         hits += info
-                        hits.size < max
+                        hits.size <= max
                     }
                 }
             } catch (e: IndexNotReadyException) {
                 throw ToolException("the IDE is still indexing; retry in a moment", e)
             }
         }
-        val found = synchronized(hits) { hits.toList() }
+        val (found, truncated) = Capped.of(synchronized(hits) { hits.toList() }, max)
         val rows = readAction { found.map { describe(it) }.distinct() }
         return buildJsonObject {
             put("query", query)
             put("count", rows.size)
-            put("truncated", found.size >= max)
+            put("truncated", truncated)
             put("matches", buildJsonArray { rows.forEach { add(it) } })
         }
     }
@@ -92,17 +90,18 @@ internal class SearchTools(private val project: Project, private val io: Corouti
     private suspend fun findOne(args: ToolArgs): JsonObject {
         val name = args.string("name")
         val max = args.int("max", DEFAULT_MAX)
-        val found = readAction {
+        val all = readAction {
             try {
-                if ('*' in name || '?' in name) glob(name, max) else byName(name, max)
+                if ('*' in name || '?' in name) glob(name, max + 1) else byName(name, max + 1)
             } catch (e: IndexNotReadyException) {
                 throw ToolException("the IDE is still indexing; retry in a moment", e)
             }
         }
+        val (found, truncated) = Capped.of(all, max)
         return buildJsonObject {
             put("name", name)
             put("count", found.size)
-            put("truncated", found.size >= max)
+            put("truncated", truncated)
             put("files", buildJsonArray { found.forEach { add(buildJsonObject { put("file", it) }) } })
         }
     }
@@ -111,10 +110,10 @@ internal class SearchTools(private val project: Project, private val io: Corouti
         FilenameIndex.getVirtualFilesByName(name, false, GlobalSearchScope.projectScope(project)).map(::relative).sorted().take(max)
 
     private fun glob(pattern: String, max: Int): List<String> {
-        val matcher = FileSystems.getDefault().getPathMatcher("glob:$pattern")
+        val matcher = FileGlob(pattern)
         val out = ArrayList<String>()
         ProjectFileIndex.getInstance(project).iterateContent { file ->
-            if (!file.isDirectory && matcher.matches(Path.of(file.name))) out += relative(file)
+            if (!file.isDirectory) relative(file).takeIf(matcher::matches)?.let { out += it }
             out.size < max
         }
         return out.sorted()
@@ -125,15 +124,16 @@ internal class SearchTools(private val project: Project, private val io: Corouti
         val depth = args.int("depth", 1)
         val max = args.int("max", DEFAULT_MAX)
         if (depth < 1 || max < 1) throw ToolException("depth and max start at 1")
-        val rows = readAction {
+        val all = readAction {
             val root = ReadTools.resolveDirectory(project, path)
-            ArrayList<JsonObject>().also { walk(root, depth, ProjectFileIndex.getInstance(project), it, max) }
+            ArrayList<JsonObject>().also { walk(root, depth, ProjectFileIndex.getInstance(project), it, max + 1) }
         }
+        val (rows, truncated) = Capped.of(all, max)
         return ToolResult.toon(
             buildJsonObject {
                 put("path", path)
                 put("count", rows.size)
-                put("truncated", rows.size >= max)
+                put("truncated", truncated)
                 put("entries", buildJsonArray { rows.forEach { add(it) } })
             },
         )
@@ -175,9 +175,10 @@ internal class SearchTools(private val project: Project, private val io: Corouti
 
         val FIND_FILES = ToolSpec(
             "find_files",
-            "Finds files by exact name or by glob (for example *.kt or Test?.java) across the project's content roots.",
+            "Finds files by exact name or by glob across the project's content roots: a glob without / matches the " +
+                "file name (*.kt, Test?.java), one with / the project-relative path (**/*.kt, src/*.kt).",
             listOf(
-                Param("name", "Exact file name, or a glob on the file name", required = false),
+                Param("name", "Exact file name, or a glob on the file name or the project-relative path", required = false),
                 Batch.param(Batch.NAMES, "Several names or globs at once, one result per name"),
                 Param("max", "Maximum files to return (default $DEFAULT_MAX)", type = "integer", required = false),
             ),

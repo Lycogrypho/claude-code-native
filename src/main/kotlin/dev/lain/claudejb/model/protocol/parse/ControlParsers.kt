@@ -34,7 +34,8 @@ internal object ControlParsers {
 
     fun parseControlRequest(root: JsonObject): List<ClaudeEvent> {
         val requestId = root.str("request_id") ?: return emptyList()
-        val request = root["request"] as? JsonObject ?: return emptyList()
+        val request = root["request"] as? JsonObject
+            ?: return listOf(ClaudeEvent.UnsupportedControlRequest(requestId, null))
         val subtype = request.str("subtype")
         val decoder = CONTROL_DECODERS[subtype] ?: return listOf(ClaudeEvent.UnsupportedControlRequest(requestId, subtype))
         return listOf(decoder(requestId, request))

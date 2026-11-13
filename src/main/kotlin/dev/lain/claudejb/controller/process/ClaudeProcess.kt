@@ -26,13 +26,15 @@ class ClaudeProcess(
 ) {
     private val log = thisLogger()
     private val stdin = StdinWriter(AppExecutorUtil.createBoundedApplicationPoolExecutor("Claude stdin", 1))
-    private val stdoutBuffer = StringBuilder()
+    private val stdoutLines = StdoutLines(MAX_LINE_LENGTH)
     private var stderrLines = 0
 
     private companion object {
         const val MAX_LINE_LENGTH = 16 * 1024 * 1024
 
         const val STDERR_LINES_AT_WARN = 200
+
+        const val OVERSIZED = "oversized line"
     }
 
     @Volatile
@@ -67,6 +69,7 @@ class ClaudeProcess(
 
             override fun processTerminated(event: ProcessEvent) {
                 log.info("claude terminated, exitCode=${event.exitCode}")
+                stdoutLines.finish()?.let(::handleLine)
                 onTerminated(event.exitCode)
             }
         })
@@ -85,30 +88,26 @@ class ClaudeProcess(
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
     private fun consumeStdout(text: String) {
-        val lines = ArrayList<String>()
-        synchronized(stdoutBuffer) {
-            stdoutBuffer.append(text)
-            var start = 0
-            var newline = stdoutBuffer.indexOf("\n", start)
-            while (newline >= 0) {
-                lines.add(stdoutBuffer.substring(start, newline))
-                start = newline + 1
-                newline = stdoutBuffer.indexOf("\n", start)
-            }
-            if (start > 0) stdoutBuffer.delete(0, start)
-            if (stdoutBuffer.length > MAX_LINE_LENGTH) {
-                log.warn("Dropping oversized claude stdout line (${stdoutBuffer.length} bytes > $MAX_LINE_LENGTH cap, no newline)")
-                stdoutBuffer.setLength(0)
+        stdoutLines.feed(text).forEach { out ->
+            when (out) {
+                is StdoutLines.Out.Line -> handleLine(out.text)
+                is StdoutLines.Out.Dropped -> dropOversized(out)
             }
         }
-        for (line in lines) {
-            try {
-                ProtocolParser.parse(line).forEach(onEvent)
-            } catch (e: Exception) {
-                log.warn("Failed to handle a ${line.length}-char claude line", e)
-            }
+    }
+
+    private fun dropOversized(out: StdoutLines.Out.Dropped) {
+        log.warn("Dropping oversized claude stdout line (${out.length} chars > $MAX_LINE_LENGTH cap, no newline)")
+        out.controlRequestId?.let { onEvent(ClaudeEvent.UnsupportedControlRequest(it, OVERSIZED)) }
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    private fun handleLine(line: String) {
+        try {
+            ProtocolParser.parse(line).forEach(onEvent)
+        } catch (e: Exception) {
+            log.warn("Failed to handle a ${line.length}-char claude line", e)
         }
     }
 

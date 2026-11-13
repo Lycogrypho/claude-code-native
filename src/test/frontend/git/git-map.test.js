@@ -11,7 +11,7 @@ const commit = (hash, subject, parents) => ({
   hash: hash,
   short: hash.slice(0, 7),
   subject: subject,
-  author: 'Lain',
+  author: 'Lycogrypho',
   ageMillis: 3600 * 1000,
   files: 2,
   parents: parents,

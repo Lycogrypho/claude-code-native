@@ -12,6 +12,44 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ("Fastest for quick answers") became the label. It now takes the description's segment that names the
   model with a version, else a display name or the id's derived name that carries a version, and never a
   bare description.
+- **A chat tab starts when the credential check cannot answer at once.** With a source script configured,
+  or once the binary's own login had aged out of the cache, the tab stayed idle and queued prompts never
+  ran. The full check now runs off the UI thread, then the session launches or the sign-in card appears.
+- **A restart can no longer be driven by the process it replaced.** Output still buffered in the old
+  `claude` process is dropped instead of reaching the new turn, an old launch can no longer orphan the
+  new process, and "Claude Code ready." is shown only for the current launch.
+- **A resumed chat keeps its conversation when the launch fails early.** An auth error, a network failure
+  or a crash on resume used to start a new conversation silently; that now happens only when the
+  conversation's transcript no longer exists.
+- **A prompt sent while the session cannot start is no longer lost.** It waits in the queue with its
+  attachments and goes when the session is ready. `/btw` with no running session says to ask again
+  instead of being sent as a normal prompt.
+- **The CLI is never left waiting on a control request.** A request the plugin cannot read, or one in a
+  line over the size cap, is answered with an error; the last line of a process that exits without a
+  newline is no longer dropped.
+- **A permission or question card is answered once.** Its buttons disable on the first click, and Submit
+  on a question is enabled only when every question has an answer (Other needs its text).
+- **Closed chats are released from memory**, and a chat no longer keeps the live output of the other
+  chats' tools.
+- **Changing several launch settings at once restarts the session once, with the new settings.**
+- **The folded input no longer takes keys from the control that has the focus.** Space on a card option
+  chooses it; typing unfolds only while the transcript has the focus, and a plain `↑` no longer does. The
+  strip says a card is waiting as soon as it arrives.
+- **Prompt recall**: `↑` recalls only with the caret at the very start of the box and `↓` at its end, so a
+  wrapped line can be walked; the Git chat recalls its own prompts; the box never shows "undefined".
+- **Custom MCP Servers accepts Claude's own `{ "mcpServers": { … } }`**: the wrapper is removed on Apply.
+  A config that is not an object of server configs is refused with the entry at fault, and the hint shows
+  a complete `stdio` and `http` example (`http`, not `streamable-http`).
+- **IDE tools** (the plugin's MCP servers): a tool refuses an argument it does not take instead of
+  ignoring it; `read_file` returns the lines that fit and says where it stopped instead of a header with
+  no content; `find_files` matches a glob with a directory part (`**/*.kt`, `src/*.kt`); `search_text`,
+  `find_files` and `list_directory` report `truncated` only when something was left out; `run_tests` runs
+  a test file in the `test` task; `hierarchy` reports the method around a call, not a local variable or a
+  lambda.
+
+### Security
+- **The diff containment check resolves symbolic links and junctions on Windows.** A link inside the
+  project that points outside it no longer counts as inside, and a dangling link is refused.
 
 ### Added
 - **Every question Claude asks ends with an Other choice.** Picking it opens a text field, and the answer

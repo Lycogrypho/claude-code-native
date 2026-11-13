@@ -7,6 +7,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import dev.lain.claudejb.controller.mcp.Reveal
 import dev.lain.claudejb.model.mcp.Batch
+import dev.lain.claudejb.model.mcp.OutputBudget
 import dev.lain.claudejb.model.mcp.Param
 import dev.lain.claudejb.model.mcp.Tool
 import dev.lain.claudejb.model.mcp.ToolArgs
@@ -14,6 +15,7 @@ import dev.lain.claudejb.model.mcp.ToolDomain
 import dev.lain.claudejb.model.mcp.ToolException
 import dev.lain.claudejb.model.mcp.ToolResult
 import dev.lain.claudejb.model.mcp.ToolSpec
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -27,9 +29,12 @@ internal class ReadTools(private val project: Project, private val reveal: Revea
         listOf(Tool(READ_FILE, ::readFile)),
     )
 
-    private suspend fun readFile(args: ToolArgs): ToolResult = ToolResult.toon(Batch.run(args, Batch.PATHS, ::readOne))
+    private suspend fun readFile(args: ToolArgs): ToolResult {
+        val files = (args.json[Batch.PATHS.key] as? JsonArray)?.size?.coerceAtLeast(1) ?: 1
+        return ToolResult.toon(Batch.run(args, Batch.PATHS) { readOne(it, TEXT_BUDGET / files) })
+    }
 
-    private suspend fun readOne(args: ToolArgs): JsonObject {
+    private suspend fun readOne(args: ToolArgs, budget: Int): JsonObject {
         val path = args.string("path")
         val offset = args.int("offset", 1)
         val limit = args.int("limit", DEFAULT_LIMIT)
@@ -40,12 +45,13 @@ internal class ReadTools(private val project: Project, private val reveal: Revea
                 ?: String(file.contentsToByteArray(), file.charset)
             val lines = text.lines()
             val from = minOf(offset, lines.size + 1)
-            val to = minOf(from + limit - 1, lines.size)
+            val to = ReadWindow.end(lines, from, limit, budget)
             buildJsonObject {
                 put("path", path)
                 put("lines", lines.size)
                 put("from", from)
                 put("to", to)
+                put("truncated", to < minOf(from.toLong() + limit - 1, lines.size.toLong()))
                 put("text", lines.subList(from - 1, to).joinToString("\n"))
             } to from
         }
@@ -76,11 +82,13 @@ internal class ReadTools(private val project: Project, private val reveal: Revea
         }
 
         private const val DEFAULT_LIMIT = 400
+        private const val TEXT_BUDGET = OutputBudget.DEFAULT_MAX_CHARS - 1_000
 
         val READ_FILE = ToolSpec(
             "read_file",
             "Reads a text file through the IDE, so unsaved editor changes are included, or several files at once with " +
-                "paths. Use offset and limit for large files. The file is shown in the editor's preview tab, without focus.",
+                "paths. Use offset and limit for large files; a long read stops early with truncated true, and `to` " +
+                "is the last line returned. The file is shown in the editor's preview tab, without focus.",
             listOf(
                 Param("path", "File path, absolute or relative to the project root", required = false),
                 Batch.paths("offset and limit apply to each"),

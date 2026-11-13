@@ -48,7 +48,7 @@ class GitContextActionsTest {
     @Test
     fun `a commit row is hash, subject, author, age and file count`() {
         val row = GitContextActions.commitRow(commit(), NOW)
-        assertEquals("abc1234  Fix the thing  ·  Lain  ·  3d ago  ·  2 files", row)
+        assertEquals("abc1234  Fix the thing  ·  Lycogrypho  ·  3d ago  ·  2 files", row)
     }
 
     @Test
@@ -159,7 +159,7 @@ class GitContextActionsTest {
     private fun commit(
         hash: String = "abc1234def5678",
         subject: String = "Fix the thing",
-        authorName: String = "Lain",
+        authorName: String = "Lycogrypho",
         authorEmail: String = "lain@example.com",
         authoredAtMillis: Long = COMMITTED_AT,
         changedPaths: List<String> = listOf("a.kt", "b.kt"),

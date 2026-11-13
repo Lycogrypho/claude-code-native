@@ -1,10 +1,8 @@
 package dev.lain.claudejb.model.settings
 
-import dev.lain.claudejb.model.protocol.ClaudeJson
 import dev.lain.claudejb.model.protocol.EffortLevel
 import dev.lain.claudejb.model.protocol.PermissionMode
 import dev.lain.claudejb.model.protocol.models.ModelInfo
-import kotlinx.serialization.json.JsonObject
 
 object LaunchDefaults {
 
@@ -43,7 +41,4 @@ object LaunchDefaults {
             "ops.services,ops.project,ops.ide,ops.actions,ops.service_view,ops.remote,ops.tools_menu,ops.consoles,ops.window," +
             "ops.data," +
             "common.show,common.query,common.prs,common.batch,common.agents,common.tools,common.fallback,common.report"
-
-    fun isValidMcpConfig(text: String): Boolean =
-        text.isBlank() || (runCatching { ClaudeJson.parseToJsonElement(text) }.getOrNull() is JsonObject)
 }

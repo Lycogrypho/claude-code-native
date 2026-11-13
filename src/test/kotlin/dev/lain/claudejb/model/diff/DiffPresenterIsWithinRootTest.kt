@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledOnOs
+import org.junit.jupiter.api.condition.OS
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Files
@@ -97,6 +99,51 @@ class DiffPresenterIsWithinRootTest {
         val created = runCatching { Files.createSymbolicLink(link.toPath(), real.toPath()) }
         assumeTrue(created.isSuccess, "symlinks unsupported in this environment")
         assertTrue(DiffPresenter.isWithinRoot(link.canonicalPath, root.toFile().canonicalPath))
+    }
+
+    @Test
+    fun `a dangling symlink inside the root is rejected, wherever it points`(@TempDir tmp: Path) {
+        val root = File(tmp.toFile(), "root").apply { mkdirs() }
+        val link = File(root, "dangling.txt")
+        val target = File(tmp.toFile(), "outside/not-yet.txt")
+        val created = runCatching { Files.createSymbolicLink(link.toPath(), target.toPath()) }
+        assumeTrue(created.isSuccess, "symlinks unsupported in this environment")
+        assertFalse(DiffPresenter.isWithinRoot(link.path, root.canonicalPath))
+    }
+
+    @Test
+    fun `a new file under a symlinked directory pointing outside is rejected`(@TempDir tmp: Path) {
+        val root = File(tmp.toFile(), "root").apply { mkdirs() }
+        val outside = File(tmp.toFile(), "outside").apply { mkdirs() }
+        val link = File(root, "linked")
+        val created = runCatching { Files.createSymbolicLink(link.toPath(), outside.toPath()) }
+        assumeTrue(created.isSuccess, "symlinks unsupported in this environment")
+        assertFalse(DiffPresenter.isWithinRoot(File(link, "new.txt").path, root.canonicalPath))
+        assertFalse(DiffPresenter.isWithinRoot(File(link, "deeper/new.txt").path, root.canonicalPath))
+    }
+
+    @Test
+    fun `a new file under a symlinked directory pointing inside is accepted`(@TempDir tmp: Path) {
+        val root = File(tmp.toFile(), "root").apply { mkdirs() }
+        val inner = File(root, "inner").apply { mkdirs() }
+        val link = File(root, "linked")
+        val created = runCatching { Files.createSymbolicLink(link.toPath(), inner.toPath()) }
+        assumeTrue(created.isSuccess, "symlinks unsupported in this environment")
+        assertTrue(DiffPresenter.isWithinRoot(File(link, "new.txt").path, root.canonicalPath))
+    }
+
+    @Test
+    @EnabledOnOs(OS.WINDOWS)
+    fun `a Windows junction to a directory outside the root is rejected`(@TempDir tmp: Path) {
+        val root = File(tmp.toFile(), "root").apply { mkdirs() }
+        val outside = File(tmp.toFile(), "outside").apply { mkdirs() }
+        val existing = File(outside, "secret.txt").apply { writeText("nope") }
+        val junction = File(root, "junction")
+        val made = ProcessBuilder("cmd", "/c", "mklink", "/J", junction.path, outside.path)
+            .redirectErrorStream(true).start().waitFor()
+        assumeTrue(made == 0 && junction.exists(), "mklink /J unavailable")
+        assertFalse(DiffPresenter.isWithinRoot(File(junction, existing.name).path, root.canonicalPath))
+        assertFalse(DiffPresenter.isWithinRoot(File(junction, "new.txt").path, root.canonicalPath))
     }
 
     @Test

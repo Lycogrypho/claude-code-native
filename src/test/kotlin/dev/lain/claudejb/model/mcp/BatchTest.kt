@@ -90,6 +90,12 @@ class BatchTest {
     }
 
     @Test
+    fun `a call naming two lists keeps one card, since the server refuses it whole`() {
+        val both = args("""{"queries":["a","b"],"paths":["x","y","z"]}""").json
+        assertNull(Batch.split("search_text", both))
+    }
+
+    @Test
     fun `a tool whose list is one call keeps one card, so a commit of five files is not five failures`() {
         val commit = args("""{"message":"m","paths":["a.kt","b.kt"]}""").json
         assertNull(Batch.split("git_commit", commit))

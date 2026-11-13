@@ -14,7 +14,7 @@ const GIT = {
       hash: '8933592ffee1',
       short: '8933592',
       subject: 'chore: invert .gitignore into an allowlist',
-      author: 'Lain',
+      author: 'Lycogrypho',
       authoredAtMillis: Date.now() - 3 * 3600 * 1000,
       files: 3,
     },
@@ -22,7 +22,7 @@ const GIT = {
       hash: '6f781c5aabb2',
       short: '6f781c5',
       subject: "feat(session): review the whole session's changes",
-      author: 'Lain',
+      author: 'Lycogrypho',
       authoredAtMillis: Date.now() - 5 * 86400 * 1000,
       files: 12,
     },
@@ -141,7 +141,7 @@ describe('git view', () => {
     expect(first.querySelector('.git-subject').textContent).toBe(
       'chore: invert .gitignore into an allowlist'
     );
-    expect(first.querySelector('.git-meta').textContent).toBe('Lain · 3h ago · 3 files');
+    expect(first.querySelector('.git-meta').textContent).toBe('Lycogrypho · 3h ago · 3 files');
   });
 
   it('every commit row carries one button per action the payload offers', () => {

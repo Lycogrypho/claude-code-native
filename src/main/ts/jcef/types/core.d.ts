@@ -134,6 +134,8 @@ interface CcShared {
   dash: DashNs;
   tabbar: TabbarNs;
   gitChatActive?(): boolean;
+  gitChatRows?(): HTMLElement | null;
+  refreshFold?(): void;
   [name: string]: unknown;
 }
 

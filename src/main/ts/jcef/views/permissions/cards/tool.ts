@@ -18,10 +18,10 @@
       h(
         'div',
         { class: 'perm-actions' },
-        PM.button({ class: 'btn primary', text: 'Approve plan' }, function () {
+        PM.answer({ class: 'btn primary', text: 'Approve plan' }, function () {
           PM.sendFor(card, { type: 'resolvePermission', id: id, allow: true });
         }),
-        PM.button({ class: 'btn ghost', text: 'Keep planning' }, function () {
+        PM.answer({ class: 'btn ghost', text: 'Keep planning' }, function () {
           PM.sendFor(card, { type: 'resolvePermission', id: id, allow: false });
         })
       )
@@ -101,10 +101,10 @@
     }
 
     const actions = [
-      PM.button({ class: 'btn primary', text: 'Accept' }, function () {
+      PM.answer({ class: 'btn primary', text: 'Accept' }, function () {
         PM.sendFor(card, { type: 'resolvePermission', id: id, allow: true });
       }),
-      PM.button({ class: 'btn danger', text: 'Reject' }, function () {
+      PM.answer({ class: 'btn danger', text: 'Reject' }, function () {
         PM.sendFor(card, { type: 'resolvePermission', id: id, allow: false });
       }),
     ];
@@ -117,13 +117,13 @@
     }
     if (card.guard) {
       actions.push(
-        PM.button({ class: 'btn ghost perm-always', text: 'Always allow this command' }, function () {
+        PM.answer({ class: 'btn ghost perm-always', text: 'Always allow this command' }, function () {
           PM.sendFor(card, { type: 'guardAllowAlways', id: id });
         })
       );
     } else if (tool) {
       actions.push(
-        PM.button({ class: 'btn ghost perm-always', text: 'Always allow' }, function () {
+        PM.answer({ class: 'btn ghost perm-always', text: 'Always allow' }, function () {
           PM.sendFor(card, { type: 'alwaysAllow', tool: tool, id: id });
         })
       );

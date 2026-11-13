@@ -77,10 +77,22 @@ class SessionLifecycle(
                 return false
             }
 
-            Credential.UNKNOWN -> return true
+            Credential.UNKNOWN -> {
+                auth.resolveOffEdt(settings) { held -> edt { launchOnceKnown(held, settings, binary, resume) } }
+                return true
+            }
 
             Credential.HELD -> Unit
         }
+        return beginLaunch(settings, binary, resume)
+    }
+
+    private fun launchOnceKnown(held: Boolean, settings: ClaudeSettings, binary: File, resume: Boolean) {
+        if (disposed || isRunning() || starting) return
+        if (held) beginLaunch(settings, binary, resume) else onLoginNeeded()
+    }
+
+    private fun beginLaunch(settings: ClaudeSettings, binary: File, resume: Boolean): Boolean {
         val workDir = project.basePath?.let(::File) ?: File(System.getProperty("user.home"))
 
         ready = false
@@ -198,6 +210,7 @@ class SessionLifecycle(
         if (!process.spawn(launchGen, binary, workDir, env, resume)) return
         s.catalog.request()
         edt {
+            if (launchGen != process.generation) return@edt
             ready = true
             s.transcript.add(Speaker.SYSTEM, "Claude Code ready.")
             auth.probe()

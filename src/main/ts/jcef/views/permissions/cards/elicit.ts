@@ -93,7 +93,7 @@
 
     function refreshAcceptState(): void {
       if (!acceptBtn) return;
-      const ok = !isForm || requiredSatisfied();
+      const ok = !PM.answered(acceptBtn) && (!isForm || requiredSatisfied());
       acceptBtn.disabled = !ok;
       if (ok) acceptBtn.removeAttribute('disabled');
       else acceptBtn.setAttribute('disabled', '');
@@ -126,7 +126,7 @@
     const serverName = e.serverName != null ? String(e.serverName) : card.title || 'Server';
     const message = e.message != null ? String(e.message) : card.summary || '';
 
-    acceptBtn = PM.button({ class: 'btn primary', text: 'Accept' }, function () {
+    acceptBtn = PM.answer({ class: 'btn primary', text: 'Accept' }, function () {
       if (acceptBtn && !acceptBtn.disabled) resolve('accept');
     }) as HTMLButtonElement;
 
@@ -145,10 +145,10 @@
         'div',
         { class: 'perm-actions' },
         acceptBtn,
-        PM.button({ class: 'btn ghost', text: 'Decline' }, function () {
+        PM.answer({ class: 'btn ghost', text: 'Decline' }, function () {
           resolve('decline');
         }),
-        PM.button({ class: 'btn ghost', text: 'Cancel' }, function () {
+        PM.answer({ class: 'btn ghost', text: 'Cancel' }, function () {
           resolve('cancel');
         })
       )

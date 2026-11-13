@@ -18,7 +18,28 @@ class EdtAuthContractTest {
         assertFalse(body.any { BLOCKING in it }) {
             "SessionLifecycle.start runs on the EDT and calls AuthGate.$BLOCKING, which resolves an unknown " +
                 "answer by spawning `claude auth status` and waiting for it. That is the UI freeze this " +
-                "split exists to remove; ask $HELD and treat UNKNOWN as 'neither launch nor prompt'."
+                "split exists to remove; ask $HELD and hand UNKNOWN to $RESOLVE."
+        }
+    }
+
+    @Test
+    fun `an UNKNOWN answer is resolved off the EDT and then launches, never dropped`() {
+        val start = bodyOf(SESSION_LIFECYCLE, "fun start(")
+        assertTrue(start.any { RESOLVE in it }) {
+            "SessionLifecycle.start no longer hands an UNKNOWN answer to $RESOLVE. Returning on UNKNOWN without " +
+                "resolving it leaves a source-script user with a tab that never starts: heldCredential answers " +
+                "UNKNOWN for them on every call."
+        }
+        val resolve = bodyOf(AUTH_GATE, "fun $RESOLVE(")
+        val pooled = resolve.indexOfFirst { POOLED in it }
+        val blocking = resolve.indexOfFirst { BLOCKING in it }
+        assertTrue(pooled >= 0 && blocking > pooled) {
+            "AuthGate.$RESOLVE must ask $BLOCKING inside `$POOLED`: it can source the shell and spawn the binary."
+        }
+        val known = bodyOf(SESSION_LIFECYCLE, "fun $KNOWN(")
+        assertTrue(known.any { LAUNCH in it }) { "$KNOWN no longer launches once the answer is known." }
+        assertFalse(known.any { REENTRY.containsMatchIn(it) }) {
+            "$KNOWN goes back through start(), which asks heldCredential again and gets UNKNOWN again."
         }
     }
 
@@ -125,6 +146,10 @@ class EdtAuthContractTest {
         const val LAUNCH_ENV = "resolveEnv()"
         const val SCRIPT_GUARD = "sourceScript"
         const val POOLED = "executeOnPooledThread"
+        const val RESOLVE = "resolveOffEdt"
+        const val KNOWN = "launchOnceKnown"
+        const val LAUNCH = "beginLaunch("
+        val REENTRY = Regex("""\bstart\(""")
 
         const val NULL_BINARY_RETURN = "if (binary == null) return"
         const val EDT_HOP = "edt {"

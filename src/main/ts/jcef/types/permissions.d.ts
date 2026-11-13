@@ -66,6 +66,8 @@ interface PermissionsNs {
   sendFor(card: PermissionCard, obj: Record<string, unknown>): void;
   isHttpUrl(u: unknown): boolean;
   button(props: HProps, onClick: () => void): HTMLElement;
+  answer(props: HProps, onClick: () => void): HTMLElement;
+  answered(el: Element): boolean;
   buildQuestionCard(card: PermissionCard): HTMLElement;
   buildElicitCard(card: PermissionCard): HTMLElement;
   buildPlanCard(card: PermissionCard): HTMLElement;

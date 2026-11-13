@@ -38,15 +38,20 @@ describe('composer fold — the input area can be hidden to give the transcript 
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
   });
 
-  it('hides the composer, its controls and the palette, never the permission cards', () => {
+  it('hides the composer and its controls, never the permission cards', () => {
     const css = readCss().replace(/\/\*[\s\S]*?\*\//g, '');
     const at = css.indexOf('#dock.folded #composer');
     expect(at).toBeGreaterThan(-1);
     const rule = css.slice(at, css.indexOf('}', at));
     expect(rule).toMatch(/#dock\.folded #controls/);
-    expect(rule).toMatch(/#dock\.folded #palette/);
     expect(rule).toMatch(/display:\s*none/);
     expect(css).not.toMatch(/#dock\.folded #permissions/);
+  });
+
+  it('names no palette rule: the palette lives inside the composer it folds with', () => {
+    const { win } = setup();
+    expect(win.CC.els.composer.querySelector('#palette')).not.toBeNull();
+    expect(readCss()).not.toMatch(/#dock\.folded #palette/);
   });
 
   it('tells the turn phase while folded', () => {
@@ -94,11 +99,62 @@ describe('composer fold — the input area can be hidden to give the transcript 
     expect(win.document.activeElement).toBe(input);
   });
 
-  it('unfolds on a plain ArrowUp while folded, so history is one key away', () => {
+  it('leaves a plain ArrowUp to scroll the transcript while folded', () => {
     const { win, dock, toggle } = setup();
     toggle.click();
     key(win, win.document.body, 'ArrowUp');
+    expect(dock.classList.contains('folded')).toBe(true);
+  });
+
+  it('unfolds when the user types with the focus in the transcript', () => {
+    const { win, dock, toggle, input } = setup();
+    toggle.click();
+    const row = win.document.createElement('div');
+    win.document.getElementById('conversation').appendChild(row);
+    key(win, row, 'h');
     expect(dock.classList.contains('folded')).toBe(false);
+    expect(win.document.activeElement).toBe(input);
+  });
+
+  it('leaves Space on a card option to choose it, and stays folded', () => {
+    const { win, dock, toggle } = setup();
+    win.cc.permissions([
+      { id: 'q1', title: 'Question', questions: [{ question: 'Which?', options: [{ label: 'A' }] }] },
+    ]);
+    toggle.click();
+    const option = win.CC.els.permissions.querySelector('.q-option');
+    option.focus();
+    const ev = key(win, option, ' ');
+    expect(ev.defaultPrevented).toBe(false);
+    expect(dock.classList.contains('folded')).toBe(true);
+  });
+
+  it('tells a card is waiting as soon as it arrives, and Ready when it is gone', () => {
+    const { win, toggle, label } = setup();
+    toggle.click();
+    win.cc.permissions([
+      { id: 'q1', title: 'Question', questions: [{ question: 'Which?', options: [{ label: 'A' }] }] },
+    ]);
+    expect(label.textContent).toBe('Waiting for your answer');
+    win.cc.permissions([]);
+    expect(label.textContent).toBe('Ready');
+  });
+
+  it('moves the focus to the toggle when any control it was on is folded away', () => {
+    const { win, dock, toggle } = setup();
+    const control = dock.querySelector('#controls button, #composer button:not(.dock-fold-btn)');
+    control.focus();
+    expect(win.document.activeElement).toBe(control);
+    key(win, control, 'ArrowDown', { ctrlKey: true, shiftKey: true });
+    expect(win.document.activeElement).toBe(toggle);
+  });
+
+  it('hands the focus to the input when the strip it was on disappears', () => {
+    const { win, toggle, input } = setup();
+    toggle.click();
+    toggle.focus();
+    win.cc.state({ running: false, starting: true, queue: [] });
+    expect(win.document.activeElement).toBe(input);
   });
 
   it('leaves keys typed into another field alone', () => {

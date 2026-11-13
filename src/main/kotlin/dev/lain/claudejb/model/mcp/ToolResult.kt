@@ -20,7 +20,12 @@ class OutputBudget(val maxChars: Int = DEFAULT_MAX_CHARS) {
     fun fit(text: String): String {
         if (text.length <= maxChars) return text
         val room = maxChars - NOTICE_ROOM
-        val cut = text.lastIndexOf('\n', room).takeIf { it > 0 } ?: room
+        val newline = text.lastIndexOf('\n', room)
+        val cut = when {
+            newline > room / 2 -> newline
+            text[room - 1].isHighSurrogate() -> room - 1
+            else -> room
+        }
         return text.substring(0, cut) + "\n# truncated: $cut of ${text.length} chars shown; narrow the request"
     }
 

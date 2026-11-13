@@ -36,9 +36,9 @@ Rules that hold for every tool:
 
 | Tool | Capability | When · example |
 |---|---|---|
-| `read_file` | A file as the editor holds it, unsaved edits included; `offset`/`limit` for big files; several with `paths`. | Any "look at", "open", "what does X contain". `code ▸ read_file {paths: ["src/A.kt", "src/B.kt"], limit: 120}` |
+| `read_file` | A file as the editor holds it, unsaved edits included; `offset`/`limit` for big files; several with `paths`. A long read stops at the output budget with `truncated: true`, and `to` is the last line returned. | Any "look at", "open", "what does X contain". `code ▸ read_file {paths: ["src/A.kt", "src/B.kt"], limit: 120}` |
 | `search_text` | Text or regex across the project; one row per hit with file and line, no text. | "where is X used", "find the string". `code ▸ search_text {queries: ["TODO", "class .*Test"], regex: true}` |
-| `find_files` | Files by exact name or glob. | "where is the file called". `code ▸ find_files {names: ["*.http", "Guard*.kt"]}` |
+| `find_files` | Files by exact name or glob; a glob with `/` matches the project-relative path (`**/*.kt`, `src/*.kt`). | "where is the file called". `code ▸ find_files {names: ["*.http", "Guard*.kt"]}` |
 | `list_directory` | A directory as the project tree shows it, excluded entries left out, `depth` levels. | "what is in this folder". `code ▸ list_directory {path: "src/main/kotlin", depth: 2}` |
 
 ### navigate · outline · hierarchy

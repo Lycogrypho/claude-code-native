@@ -39,4 +39,25 @@
       if (Object.prototype.hasOwnProperty.call(props, key)) withClick[key] = props[key];
     return CC.h('button', withClick);
   };
+
+  PM.answered = function (el: Element): boolean {
+    const card = el.closest('.perm-card');
+    return !!card && card.classList.contains('answered');
+  };
+
+  PM.answer = function (props: HProps, onClick: () => void): HTMLElement {
+    const el = PM.button(props, function () {
+      if (PM.answered(el) || (el as HTMLButtonElement).disabled) return;
+      const card = el.closest('.perm-card');
+      if (card) {
+        card.classList.add('answered');
+        card.querySelectorAll<HTMLButtonElement>('.perm-answer').forEach(function (b) {
+          b.disabled = true;
+        });
+      }
+      onClick();
+    });
+    el.classList.add('perm-answer');
+    return el;
+  };
 })();

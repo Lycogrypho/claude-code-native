@@ -28,12 +28,21 @@ class SessionLiveSettings(
         val previous = session.launch.model
         session.launch = session.launch.copy(model = resolved)
         if (persist) ClaudeSettings.getInstance(project).update { it.model = value.orEmpty() }
-        if (session.isRunning()) {
-            session.controlClient.send({ id -> ControlProtocol.setModelRequest(id, resolved) }) { res ->
-                if (!res.success) edt { revertModel(previous, resolved, res.error) }
-            }
-        }
+        sendModel(previous, resolved)
         fireState()
+    }
+
+    private fun sendModel(previous: String?, resolved: String?) {
+        if (!session.isRunning()) return
+        session.controlClient.send({ id -> ControlProtocol.setModelRequest(id, resolved) }) { res ->
+            if (!res.success) edt { revertModel(previous, resolved, res.error) }
+        }
+    }
+
+    private fun sendPermissionMode(mode: String) {
+        if (!session.isRunning()) return
+        val wire = SessionLauncher.binaryPermissionMode(mode)
+        write(ControlProtocol.setPermissionModeRequest(ControlProtocol.newRequestId(), wire))
     }
 
     private fun revertModel(previous: String?, attempted: String?, error: String?) {
@@ -49,10 +58,7 @@ class SessionLiveSettings(
     fun changePermissionMode(mode: String) {
         session.launch = session.launch.copy(permissionMode = mode)
         ClaudeSettings.getInstance(project).update { it.permissionMode = mode }
-        if (session.isRunning()) {
-            val wire = SessionLauncher.binaryPermissionMode(mode)
-            write(ControlProtocol.setPermissionModeRequest(ControlProtocol.newRequestId(), wire))
-        }
+        sendPermissionMode(mode)
         fireState()
     }
 
@@ -111,26 +117,29 @@ class SessionLiveSettings(
 
     fun adopt(next: LaunchOptions) {
         val before = session.launch
-        val relaunch = before.relaunchDiffers(next)
+        val modelChanged = resolve(before.model) != resolve(next.model)
         val thinkingChanged = before.thinkingTokens != next.thinkingTokens
-        if (resolve(before.model) != resolve(next.model)) changeModel(next.model, persist = false)
-        if (before.effort != next.effort) changeEffort(next.effort, persist = false)
-        if (before.permissionMode != next.permissionMode) changePermissionMode(next.permissionMode)
-        changeThinkingTokens(next.thinkingTokens, persist = false)
-        val live = session.launch
+        val restart = (before.relaunchDiffers(next) || thinkingChanged) && session.isRunning()
         session.launch = next.copy(
-            model = live.model,
-            effort = live.effort,
-            permissionMode = live.permissionMode,
-            thinkingTokens = live.thinkingTokens,
-            sessionId = live.sessionId,
+            model = if (modelChanged) resolve(next.model) else before.model,
+            sessionId = before.sessionId,
         )
         fireState()
-        if (relaunch && !thinkingChanged && session.isRunning()) {
-            session.systemNotice("Launch settings changed — restarting session.")
+        if (restart) {
+            session.systemNotice(restartNotice(before, next))
             session.restart(resume = true)
+            return
         }
+        if (modelChanged) sendModel(before.model, session.launch.model)
+        if (before.permissionMode != next.permissionMode) sendPermissionMode(next.permissionMode)
     }
+
+    private fun restartNotice(before: LaunchOptions, next: LaunchOptions): String =
+        if (before.relaunchDiffers(next)) {
+            "Launch settings changed — restarting session."
+        } else {
+            "Extended thinking ${if (next.thinkingTokens != null) "on" else "off"} — restarting session."
+        }
 
     private fun resolve(value: String?): String? =
         if (value == LaunchDefaults.RECOMMENDED_ALIAS) session.catalog.preferredDefaultModel() else value

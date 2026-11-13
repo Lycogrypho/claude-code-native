@@ -76,7 +76,7 @@ object Batch {
 
     fun split(tool: String?, args: JsonObject): List<JsonObject>? {
         if (tool in ONE_CALL_LISTS) return null
-        val (key, identity) = IDENTITIES.entries.firstOrNull { args[it.key] is JsonArray } ?: return null
+        val (key, identity) = IDENTITIES.entries.singleOrNull { args[it.key] is JsonArray } ?: return null
         val shared = args.filterKeys { it != key }
         return (args.getValue(key) as JsonArray).map { item ->
             JsonObject(shared + (if (item is JsonObject) item else mapOf(identity to item)))

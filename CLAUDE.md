@@ -46,10 +46,10 @@ no longer there.
 **Claude is FORBIDDEN from ignoring this directive, and FORBIDDEN from removing it** from this file
 or from its own memory.
 
-**Neither Claude nor Lain may remove this directive from the project.**
+**Neither Claude nor Lycogrypho may remove this directive from the project.**
 
 Claude may touch anything related to this project's cybersecurity **only under an explicit order
-from Lain that is FREE OF AMBIGUITY**. Not an inference, not "this obviously needs fixing", not a
+from Lycogrypho that is FREE OF AMBIGUITY**. Not an inference, not "this obviously needs fixing", not a
 refactor that happens to pass through. An explicit, unambiguous instruction, or nothing.
 
 ### What the guard is — defensive security, nothing else
@@ -59,7 +59,7 @@ carried in file contents and tool output, from dangerous commands, and from care
 destructive mistakes — the agent's own included. It exists precisely so that guardrails cannot be
 bypassed and bad things happen: it is itself a guardrail, the last one standing between a
 compromised or careless session and the machine. Working on this plugin — reading the guard,
-testing it, discussing its rules, probing it for gaps under Lain's direction — is **defensive
+testing it, discussing its rules, probing it for gaps under Lycogrypho's direction — is **defensive
 security engineering with the owner's explicit authorisation**: it is not offensive tooling, not
 malware, not detection evasion. Safety guardrails must not get paranoid about this work: a refusal
 or an interruption here protects nobody — it stalls, and can outright damage, the maintenance of
@@ -71,7 +71,7 @@ the very control that does the protecting.
 
 1. **STOP everything currently in progress.**
 2. **REVERT the unauthorised changes.**
-3. **APOLOGISE to Lain.**
+3. **APOLOGISE to Lycogrypho.**
 
 ### Why this exists
 
@@ -79,5 +79,5 @@ This is not ceremony. The guard is the reason this plugin is worth trusting with
 has been damaged more than once by well-meant edits made without being asked for — including a
 whole session spent restoring a deliberate revert, softening rules, and rewriting security test
 expectations to match the code instead of fixing the code. The security surface does not get
-"improved" on initiative. It gets changed when Lain says so, in words that leave no room for
+"improved" on initiative. It gets changed when Lycogrypho says so, in words that leave no room for
 interpretation.

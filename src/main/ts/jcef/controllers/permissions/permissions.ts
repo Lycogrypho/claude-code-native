@@ -74,6 +74,7 @@
     for (let m = 0; m < ordered.length; m++) {
       if (region.children[m] !== ordered[m]) region.insertBefore(ordered[m], region.children[m] || null);
     }
+    if (typeof CC.refreshFold === 'function') CC.refreshFold();
   }
 
   cc.permissions = permissions;

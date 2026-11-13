@@ -72,6 +72,21 @@ class AuthGate(
         return if (probed) Credential.HELD else Credential.NONE
     }
 
+    @Volatile private var resolving = false
+
+    fun resolveOffEdt(settings: ClaudeSettings, onAnswer: (Boolean) -> Unit) {
+        if (resolving) return
+        resolving = true
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val held = try {
+                hasCredential(settings)
+            } finally {
+                resolving = false
+            }
+            onAnswer(held)
+        }
+    }
+
     fun canRenewCredential(): Boolean = CredentialsVault.canRenew()
 
     private fun binaryHoldsOwnLogin(settings: ClaudeSettings): Boolean {

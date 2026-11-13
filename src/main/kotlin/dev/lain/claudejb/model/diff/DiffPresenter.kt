@@ -10,6 +10,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonObject
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.InvalidPathException
+import java.nio.file.Path
 
 object DiffPresenter {
 
@@ -20,16 +23,26 @@ object DiffPresenter {
     fun isWithinRoot(path: String?, projectRoot: String?): Boolean {
         if (path == null || projectRoot == null) return false
         return try {
-            val canonicalFile = File(path).canonicalFile
-            val canonicalRoot = File(projectRoot).canonicalFile
-            val rootPath = canonicalRoot.path
-            val filePath = canonicalFile.path
-            filePath == rootPath || filePath.startsWith(rootPath + File.separator)
+            val file = realPathOf(path) ?: return false
+            val root = realPathOf(projectRoot) ?: return false
+            file.startsWith(root)
         } catch (_: java.io.IOException) {
             false
         } catch (_: SecurityException) {
             false
+        } catch (_: InvalidPathException) {
+            false
         }
+    }
+
+    private fun realPathOf(path: String): Path? {
+        val target = File(path).canonicalFile.toPath()
+        var existing: Path = target
+        while (!Files.exists(existing)) {
+            if (Files.isSymbolicLink(existing)) return null
+            existing = existing.parent ?: return null
+        }
+        return existing.toRealPath().resolve(existing.relativize(target)).normalize()
     }
 
     const val MAX_DIFF_FILE_BYTES = 1_000_000L

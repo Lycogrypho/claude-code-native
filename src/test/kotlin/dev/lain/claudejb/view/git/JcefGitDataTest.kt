@@ -26,7 +26,7 @@ class JcefGitDataTest {
     private val commit = GitCommitInfo(
         hash = "0123456789abcdef0123456789abcdef01234567",
         subject = "Add the Git view",
-        authorName = "Lain",
+        authorName = "Lycogrypho",
         authorEmail = "lain@example.invalid",
         authoredAtMillis = 1_000_000L,
         changedPaths = listOf("src/a.kt", "src/b.kt", "README.md"),
@@ -35,7 +35,7 @@ class JcefGitDataTest {
     private val merge = GitCommitInfo(
         hash = "89abcdef89abcdef89abcdef89abcdef89abcdef",
         subject = "Merge branch 'feature/git'",
-        authorName = "Lain",
+        authorName = "Lycogrypho",
         authorEmail = "lain@example.invalid",
         authoredAtMillis = 1_200_000L,
         changedPaths = listOf("src/a.kt"),
@@ -121,7 +121,7 @@ class JcefGitDataTest {
         assertEquals(commit.hash, c["hash"]!!.jsonPrimitive.content)
         assertEquals("0123456", c["short"]!!.jsonPrimitive.content)
         assertEquals("Add the Git view", c["subject"]!!.jsonPrimitive.content)
-        assertEquals("Lain", c["author"]!!.jsonPrimitive.content)
+        assertEquals("Lycogrypho", c["author"]!!.jsonPrimitive.content)
         assertEquals(1_000_000L, c["authoredAtMillis"]!!.jsonPrimitive.long)
         assertEquals(3, c["files"]!!.jsonPrimitive.int)
     }

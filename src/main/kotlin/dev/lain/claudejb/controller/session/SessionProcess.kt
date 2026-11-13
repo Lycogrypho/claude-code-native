@@ -3,6 +3,7 @@ package dev.lain.claudejb.controller.session
 import dev.lain.claudejb.controller.mcp.IdeMcpService
 import dev.lain.claudejb.controller.process.ClaudeProcess
 import dev.lain.claudejb.model.protocol.ClaudeEvent
+import dev.lain.claudejb.model.session.history.SessionStore
 import dev.lain.claudejb.model.session.launch.IdeServer
 import dev.lain.claudejb.model.session.launch.SessionLauncher
 import dev.lain.claudejb.model.session.transcript.Speaker
@@ -20,26 +21,24 @@ class SessionProcess(
 
     private val log = thisLogger()
 
-    @Volatile private var process: ClaudeProcess? = null
+    private val slot = ProcessSlot<ClaudeProcess>()
 
-    @Volatile var generation = 0
-        private set
+    val generation: Int get() = slot.generation
 
     @Volatile private var resumedLaunch = false
 
-    fun isRunning(): Boolean = process?.isRunning() == true
+    fun isRunning(): Boolean = slot.current?.isRunning() == true
 
-    fun write(line: String): Boolean = process?.writeLine(line) ?: false
+    fun write(line: String): Boolean = slot.current?.writeLine(line) ?: false
 
-    fun supersede(): Int = ++generation
+    fun supersede(): Int = slot.supersede()
 
     fun terminate() {
-        process?.terminate()
-        process = null
+        slot.take()?.terminate()
     }
 
     fun spawn(launchGen: Int, binary: File, workDir: File, env: Map<String, String>, resume: Boolean): Boolean {
-        if (launchGen != generation) return false
+        if (!slot.isCurrent(launchGen)) return false
         resumedLaunch = resume
         val opts = s.launch.copy(sessionId = s.sessionId, ideSockets = ideSockets())
         val proc = ClaudeProcess(
@@ -48,20 +47,19 @@ class SessionProcess(
             args = SessionLauncher.buildArgs(opts, resume, SessionLauncher.mcpConfigJson(opts)),
             nodeOverride = ClaudeSettings.getInstance(s.project).nodePath,
             extraEnv = env,
-            onEvent = onEvent,
+            onEvent = slot.onlyWhileCurrent(launchGen, onEvent),
             onTerminated = { code -> onTerminated(launchGen, code) },
         )
-        process = proc
+        if (!slot.claim(launchGen, proc)) return false
         val started = runCatching { proc.start() }
         if (started.isFailure) {
-            process = null
+            slot.release(proc)
             log.warn("Failed to start the claude process", started.exceptionOrNull())
             s.notifier.error("Failed to start Claude Code: ${started.exceptionOrNull()?.message ?: "unknown error"}")
             return false
         }
-        if (launchGen != generation) {
+        if (slot.releaseIfStale(launchGen, proc)) {
             proc.terminate()
-            if (process === proc) process = null
             return false
         }
         return true
@@ -78,8 +76,10 @@ class SessionProcess(
     }
 
     private fun onTerminated(gen: Int, exitCode: Int) {
-        if (gen != generation) return
-        val staleResume = resumedLaunch && !s.catalog.initialized
+        if (!slot.isCurrent(gen)) return
+        val staleResume = StaleResume.startsFresh(exitCode, resumedLaunch, s.catalog.initialized) {
+            s.sessionId?.let(SessionStore::exists) == true
+        }
         s.flushDeltas()
         s.controlClient.failAll("process gone")
         edt {
@@ -91,7 +91,7 @@ class SessionProcess(
             s.taskTracker.clear()
             s.hookNarrator.clear()
             when {
-                exitCode != 0 && staleResume -> restartFresh(exitCode)
+                staleResume -> restartFresh(exitCode)
 
                 exitCode != 0 -> {
                     s.transcript.add(Speaker.ERROR, "Claude Code exited (code $exitCode).")

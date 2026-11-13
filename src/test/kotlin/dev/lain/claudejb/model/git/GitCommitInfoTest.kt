@@ -97,7 +97,7 @@ class GitCommitInfoTest {
         val info = GitCommitInfo(
             hash = "0123456789abcdef",
             subject = "feat(git): read the branch and the recent commits",
-            authorName = "Lain",
+            authorName = "Lycogrypho",
             authorEmail = "lain@example.invalid",
             authoredAtMillis = 1_754_900_000_000L,
             changedPaths = listOf("build.gradle.kts", "src/main/kotlin/dev/lain/claudejb/git/GitGateway.kt"),
@@ -105,7 +105,7 @@ class GitCommitInfoTest {
         assertEquals("0123456789abcdef", info.hash)
         assertEquals("0123456", info.shortHash)
         assertEquals("feat(git): read the branch and the recent commits", info.subject)
-        assertEquals("Lain", info.authorName)
+        assertEquals("Lycogrypho", info.authorName)
         assertEquals("lain@example.invalid", info.authorEmail)
         assertEquals(1_754_900_000_000L, info.authoredAtMillis)
         assertEquals(listOf("build.gradle.kts", "src/main/kotlin/dev/lain/claudejb/git/GitGateway.kt"), info.changedPaths)
@@ -114,7 +114,7 @@ class GitCommitInfoTest {
     private fun commit(hash: String) = GitCommitInfo(
         hash = hash,
         subject = "subject",
-        authorName = "Lain",
+        authorName = "Lycogrypho",
         authorEmail = "lain@example.invalid",
         authoredAtMillis = 0L,
         changedPaths = emptyList(),

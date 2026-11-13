@@ -27,14 +27,15 @@ describe('permission card — read-only diff, no per-line checkboxes', () => {
     expect(region.querySelector('input[type="checkbox"]')).toBeNull();
   });
 
-  it('Accept / Reject resolve the exact request id', () => {
+  it.each([
+    ['Accept', true],
+    ['Reject', false],
+  ])('%s resolves the exact request id', (label, allow) => {
     const sent = [];
     win.CC.send = (m) => sent.push(m);
     const buttons = [...win.CC.els.permissions.querySelectorAll('.btn')];
-    buttons.find((b) => b.textContent.trim() === 'Accept').click();
-    buttons.find((b) => b.textContent.trim() === 'Reject').click();
-    expect(sent).toContainEqual({ type: 'resolvePermission', id: 'req1', allow: true });
-    expect(sent).toContainEqual({ type: 'resolvePermission', id: 'req1', allow: false });
+    buttons.find((b) => b.textContent.trim() === label).click();
+    expect(sent).toContainEqual({ type: 'resolvePermission', id: 'req1', allow });
   });
 });
 

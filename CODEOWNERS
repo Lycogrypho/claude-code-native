@@ -1,26 +1,26 @@
 # CODEOWNERS — Claude Code Native
 #
 # GitHub uses this file to auto-request reviews on pull requests.
-# Maintainer: @serialexperimentslainnnn (the local author "Lain" / lain@digitalexperiments.dev).
+# Maintainer: @lycogrypho (the local author "Lycogrypho" / c.attanasi@grypho.it).
 
 # Default owner for everything in the repo.
-*                       @serialexperimentslainnnn
+*                       @lycogrypho
 
 # Security-sensitive policies — keep ownership explicit even though the glob
 # above already matches. The last matching rule wins, so order matters here.
-/SECURITY.md            @serialexperimentslainnnn
-/docs/adr/              @serialexperimentslainnnn
-/build.gradle.kts       @serialexperimentslainnnn
-/src/main/kotlin/dev/lain/claudejb/process/      @serialexperimentslainnnn
-/src/main/kotlin/dev/lain/claudejb/permission/   @serialexperimentslainnnn
-/src/main/kotlin/dev/lain/claudejb/protocol/     @serialexperimentslainnnn
+/SECURITY.md            @lycogrypho
+/docs/adr/              @lycogrypho
+/build.gradle.kts       @lycogrypho
+/src/main/kotlin/dev/lain/claudejb/process/      @lycogrypho
+/src/main/kotlin/dev/lain/claudejb/permission/   @lycogrypho
+/src/main/kotlin/dev/lain/claudejb/protocol/     @lycogrypho
 
 # Two files nothing may edit in passing. CLAUDE.md carries the standing directive over the
 # guard and its tests, and .gitignore is what keeps credentials and local state out of the
 # history in the first place — a quiet line added to either is a change to the rules, not a
 # chore, so both are owned outright.
-/CLAUDE.md              @serialexperimentslainnnn
-/.gitignore             @serialexperimentslainnnn
+/CLAUDE.md              @lycogrypho
+/.gitignore             @lycogrypho
 
 # A workflow is privileged code: it runs with a token, and it can publish to the Marketplace. A ruleset is
 # the gate that decides what reaches main at all. Both are listed LAST so they win over every earlier glob.
@@ -30,7 +30,7 @@
 # let an author approve their own pull request, so on a single-maintainer repository requiring a code-owner
 # review makes the branch unmergeable rather than well-guarded. The moment a second maintainer has write
 # access, turn it on in BOTH rulesets; the ownership below is already written for that day.
-/.github/               @serialexperimentslainnnn
-/.github/workflows/     @serialexperimentslainnnn
-/.github/rulesets/      @serialexperimentslainnnn
-/scripts/               @serialexperimentslainnnn
+/.github/               @lycogrypho
+/.github/workflows/     @lycogrypho
+/.github/rulesets/      @lycogrypho
+/scripts/               @lycogrypho

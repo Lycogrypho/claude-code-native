@@ -2,6 +2,7 @@ package dev.lain.claudejb.controller.mcp.tools.code
 
 import com.intellij.openapi.application.smartReadAction
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import dev.lain.claudejb.model.mcp.Param
 import dev.lain.claudejb.model.mcp.Tool
@@ -14,8 +15,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.UFile
+import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.visitor.UastVisitor
 
@@ -98,6 +102,14 @@ internal class UastTools(private val project: Project) {
         private const val DEFAULT_DEPTH = 3
         private const val DEFAULT_MAX = 300
         private const val TEXT_CHARS = 80
+
+        fun enclosingDeclaration(element: PsiElement): PsiElement? {
+            val inner = generateSequence(element) { it.parent }
+                .firstNotNullOfOrNull { UastFacade.convertElementWithParent(it, null) } ?: return null
+            return generateSequence(inner) { it.uastParent }
+                .filter { it is UMethod || it is UField || it is UClass }
+                .firstNotNullOfOrNull { it.sourcePsi }
+        }
 
         val UAST_TREE = ToolSpec(
             "uast_tree",

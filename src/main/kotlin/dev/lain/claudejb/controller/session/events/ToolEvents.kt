@@ -31,7 +31,7 @@ class ToolEvents(
     private class Own(val call: OwnTools.Call, val items: List<Item>, val batch: Boolean)
 
     private val live = HashMap<String, Pair<TranscriptEntry, LiveLines>>()
-    private val early = HashMap<String, LiveLines>()
+    private val early = EarlyLines(MAX_EARLY_TOOLS)
     private val ownCalls = HashMap<String, Own>()
 
     init {
@@ -43,18 +43,18 @@ class ToolEvents(
 
     private fun onLiveLine(toolUseId: String, line: String) {
         if (!s.transcript.knowsTool(toolUseId)) {
-            early.getOrPut(toolUseId) { LiveLines() }.add(line)
+            early.add(toolUseId, line)
             return
         }
         val (entry, ring) = live.getOrPut(toolUseId) {
-            s.transcript.addToolOutput(toolUseId, "", meta = LIVE) to (early.remove(toolUseId) ?: LiveLines())
+            s.transcript.addToolOutput(toolUseId, "", meta = LIVE) to (early.take(toolUseId) ?: LiveLines())
         }
         ring.add(line)
         s.transcript.replaceText(entry, ring.render())
     }
 
     private fun flushEarly(toolUseId: String) {
-        val ring = early.remove(toolUseId) ?: return
+        val ring = early.take(toolUseId) ?: return
         val entry = s.transcript.addToolOutput(toolUseId, ring.render(), meta = LIVE)
         live[toolUseId] = entry to ring
     }
@@ -143,7 +143,7 @@ class ToolEvents(
 
     private fun settle(toolUseId: String, failed: Boolean) {
         live.remove(toolUseId)
-        early.remove(toolUseId)
+        early.take(toolUseId)
         if (s.runningAgents.nodes.values.none { it.meta.toolUseId == toolUseId }) {
             s.transcript.setToolState(toolUseId, if (failed) ToolState.ERROR else ToolState.FINISHED)
         }
@@ -198,6 +198,7 @@ class ToolEvents(
     private companion object {
         const val TOON = "toon"
         const val LIVE = "live"
+        const val MAX_EARLY_TOOLS = 16
         const val DIFF = "diff"
         const val ERROR = "error"
     }

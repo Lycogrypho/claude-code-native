@@ -40,6 +40,10 @@
     return pane;
   }
 
+  CC.gitChatRows = function (): HTMLElement | null {
+    return rowsEl;
+  };
+
   CC.gitChatActive = function (): boolean {
     return (
       typeof D.gitSubView === 'function' &&
