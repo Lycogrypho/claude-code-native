@@ -36,7 +36,7 @@ internal class BreakpointTools(private val project: Project) {
     private suspend fun breakpoint(args: ToolArgs): ToolResult = when (val action = args.string("action")) {
         "add" -> add(args)
         "remove" -> remove(args)
-        "list" -> list(args.int("max", DEFAULT_MAX))
+        "list" -> list(args.limit("max", DEFAULT_MAX))
         else -> throw ToolException("action must be add, remove or list, not $action")
     }
 

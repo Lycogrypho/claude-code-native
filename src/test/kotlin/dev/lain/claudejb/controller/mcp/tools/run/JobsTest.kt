@@ -60,6 +60,32 @@ class JobsTest {
     }
 
     @Test
+    fun `a finished job nobody came back for is forgotten after its time, a running one never`() = runBlocking {
+        var now = 0L
+        val timed = Jobs<Int>(scope, "e") { now }
+        val stuck = timed.start(OutputTail()) { CompletableDeferred<Int>().await() }
+        val done = timed.start(OutputTail()) { 1 }
+        done.deferred.join()
+        now = Jobs.UNCLAIMED_TTL_MILLIS + 1
+        timed.start(OutputTail()) { 2 }.deferred.join()
+        assertThrows<ToolException> { timed.find(done.id) }
+        assertTrue(timed.find(stuck.id) === stuck)
+    }
+
+    @Test
+    fun `finished jobs nobody came back for are capped, oldest first`() = runBlocking {
+        var now = 0L
+        val capped = Jobs<Int>(scope, "c") { now }
+        val first = capped.start(OutputTail()) { 0 }.also { it.deferred.join() }
+        repeat(Jobs.MAX_UNCLAIMED + 5) {
+            now++
+            capped.start(OutputTail()) { it }.deferred.join()
+        }
+        assertTrue(capped.kept <= Jobs.MAX_UNCLAIMED + 1)
+        assertThrows<ToolException> { capped.find(first.id) }
+    }
+
+    @Test
     fun `wait is bounded to one through one hundred and ten seconds`() {
         assertEquals(45_000L, Jobs.waitMillis(args("{}")))
         assertEquals(110_000L, Jobs.waitMillis(args("""{"wait":"110"}""")))

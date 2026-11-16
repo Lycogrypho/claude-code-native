@@ -12,8 +12,10 @@ class AgentStatePollGateTest {
     private var anyRunning = false
     private var scans = 0
 
+    private var processAlive = true
+
     private fun schedule() = PollSchedule(
-        isRunning = { true },
+        isRunning = { processAlive },
         turnActive = { turnActive },
         effects = PollSchedule.SessionEffects(edt = { it() }, fireState = {}),
         quota = PollSchedule.QuotaSource(
@@ -62,6 +64,31 @@ class AgentStatePollGateTest {
         anyRunning = false
         anySettled = false
         assertFalse(pollStarts(), "nothing can change, so nothing should be re-read")
+    }
+
+    @Test
+    fun `a dead process retires the agent poll even with an agent left RUNNING`() {
+        anyRunning = true
+        val poll = schedule()
+        poll.ensureAgentRevivalPoll()
+        assertTrue(poll.agentPollRunning)
+        processAlive = false
+        poll.pollAgentStateForTest()
+        assertFalse(poll.agentPollRunning, "nothing can change on a dead session, so the disk scan must stop")
+        assertTrue(scans == 0)
+        poll.stopAll()
+    }
+
+    @Test
+    fun `a dead process retires the quota poll instead of ticking for ever`() {
+        turnActive = true
+        val poll = schedule()
+        poll.startQuotaPolling()
+        assertTrue(poll.quotaRunning)
+        processAlive = false
+        poll.pollQuota()
+        assertFalse(poll.quotaRunning, "the quota timer must stop once the process is gone")
+        poll.stopAll()
     }
 
     @Test

@@ -34,6 +34,7 @@
       },
       btn
     );
+    if (opts.key) wrap.setAttribute('data-pill-key', opts.key);
     if (opts.onClose) {
       const onClose = opts.onClose;
       const close = h('button', {

@@ -85,7 +85,7 @@ internal class HistoryTools(
 
     private suspend fun fileHistory(args: ToolArgs): ToolResult {
         val path = args.string("path")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val file = readAction { ReadTools.resolveFile(project, path) }
         val relative = Locations.relative(project, file)
         val commits = withContext(io) { project.service<GitHistoryService>().fileHistory(relative, max) }

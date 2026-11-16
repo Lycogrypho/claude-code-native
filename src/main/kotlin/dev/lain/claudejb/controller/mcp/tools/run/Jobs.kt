@@ -10,7 +10,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
-internal class Job<T>(val id: String, val tail: OutputTail, val deferred: Deferred<T>)
+internal class Job<T>(val id: String, val tail: OutputTail, val deferred: Deferred<T>) {
+
+    @Volatile var finishedAt: Long? = null
+}
 
 internal class Deadline(millis: Long) {
 
@@ -25,16 +28,32 @@ internal class Deadline(millis: Long) {
     }
 }
 
-internal class Jobs<T>(private val scope: CoroutineScope, private val prefix: String) {
+internal class Jobs<T>(
+    private val scope: CoroutineScope,
+    private val prefix: String,
+    private val clockMillis: () -> Long = System::currentTimeMillis,
+) {
 
     private val counter = AtomicInteger()
     private val running = ConcurrentHashMap<String, Job<T>>()
 
+    val kept: Int get() = running.size
+
     fun start(tail: OutputTail, block: suspend () -> T): Job<T> {
+        evictUnclaimed()
         val id = prefix + "-" + counter.incrementAndGet()
         val job = Job(id, tail, scope.async { block() })
+        job.deferred.invokeOnCompletion { job.finishedAt = clockMillis() }
         running[id] = job
         return job
+    }
+
+    private fun evictUnclaimed() {
+        val now = clockMillis()
+        val finished = running.values.mapNotNull { job -> job.finishedAt?.let { job to it } }.sortedBy { it.second }
+        val expired = finished.filter { now - it.second > UNCLAIMED_TTL_MILLIS }
+        val overflow = (finished - expired.toSet()).dropLast(MAX_UNCLAIMED)
+        (expired + overflow).forEach { running.remove(it.first.id) }
     }
 
     fun find(id: String): Job<T> =
@@ -50,6 +69,8 @@ internal class Jobs<T>(private val scope: CoroutineScope, private val prefix: St
 
         const val DEFAULT_WAIT_SECONDS = 45
         const val MAX_WAIT_SECONDS = 110
+        const val UNCLAIMED_TTL_MILLIS = 10 * 60 * 1000L
+        const val MAX_UNCLAIMED = 32
         private const val MILLIS = 1000L
 
         val WAIT = Param(

@@ -83,6 +83,7 @@ class SessionProcess(
         s.flushDeltas()
         s.controlClient.failAll("process gone")
         edt {
+            s.poll.stopAll()
             s.turn.reset()
             s.lifecycle.ready = false
             s.catalog.initialized = false

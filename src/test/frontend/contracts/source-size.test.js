@@ -21,12 +21,15 @@ function walk(dir, ext) {
 }
 
 function sources() {
-  const ts = walk(TS_ROOT, '.ts').filter((f) => !f.endsWith('.d.ts'));
-  return [...ts, ...walk(CSS_ROOT, '.css')];
+  return [...walk(TS_ROOT, '.ts'), ...walk(CSS_ROOT, '.css')];
 }
 
 describe('source size', () => {
-  it('every TypeScript module and stylesheet stays under the ceiling', () => {
+  it('counts the type declarations too', () => {
+    expect(sources().some((f) => f.endsWith('.d.ts'))).toBe(true);
+  });
+
+  it('every TypeScript module, declaration file and stylesheet stays under the ceiling', () => {
     const offenders = sources()
       .filter((f) => !OVERSIZE.has(path.basename(f)) && lineCount(f) > CEILING)
       .map((f) => `${path.relative(process.cwd(), f)}: ${lineCount(f)}`);

@@ -114,7 +114,7 @@ export default [
 
   {
     // Build-time config at the repo root: CommonJS on Node.
-    files: ['*.config.js', '*.config.cjs'],
+    files: ['*.config.js', '*.config.cjs', 'bin/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',

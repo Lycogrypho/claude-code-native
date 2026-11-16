@@ -57,6 +57,20 @@
     return conversationEl();
   }
 
+  function belongsLast(container: HTMLElement, row: RowEl): boolean {
+    for (
+      let k = container.lastElementChild as RowEl | null;
+      k;
+      k = k.previousElementSibling as RowEl | null
+    ) {
+      if (k === row || k.__order == null) {
+        continue;
+      }
+      return k.__order <= (row.__order as number);
+    }
+    return true;
+  }
+
   function reposition(entry: TranscriptEntry): void {
     const rec = rows.get(entry.id);
     if (!rec || !rec.el) {
@@ -70,7 +84,7 @@
     }
 
     let ref: RowEl | null = null;
-    if (rec.el.__order != null) {
+    if (rec.el.__order != null && !belongsLast(container, rec.el)) {
       const kids = container.children;
       for (let i = 0; i < kids.length; i++) {
         const k = kids[i] as RowEl;
@@ -142,7 +156,15 @@
       showEmptyState(false);
     }
 
-    TX.refreshSearch();
+    TX.refreshSearch(
+      entries
+        .filter(function (e) {
+          return !!e && e.id != null;
+        })
+        .map(function (e) {
+          return e.id;
+        })
+    );
 
     TX.scheduleScroll(stick);
   };

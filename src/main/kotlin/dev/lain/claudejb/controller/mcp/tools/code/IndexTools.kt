@@ -36,7 +36,7 @@ internal class IndexTools(private val project: Project) {
 
     private suspend fun keys(args: ToolArgs): ToolResult {
         val name = args.string("index")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val keys = smartReadAction(project) { FileBasedIndex.getInstance().getAllKeys(index(name), project).map { it.toString() }.sorted() }
         return ToolResult.toon(
             buildJsonObject {
@@ -51,7 +51,7 @@ internal class IndexTools(private val project: Project) {
     private suspend fun query(args: ToolArgs): ToolResult {
         val name = args.string("index")
         val key = args.string("key")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val files = smartReadAction(project) {
             val id = index(name)
             val scope = GlobalSearchScope.projectScope(project)
@@ -73,7 +73,7 @@ internal class IndexTools(private val project: Project) {
     private suspend fun stubQuery(args: ToolArgs): ToolResult {
         val name = args.string("index")
         val key = args.optionalString("key")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val indexKey = stubIndex(name)
         val rows = smartReadAction(project) {
             val stubs = StubIndex.getInstance()

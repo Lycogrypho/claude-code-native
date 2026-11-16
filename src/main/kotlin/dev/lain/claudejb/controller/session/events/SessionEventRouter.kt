@@ -16,6 +16,7 @@ class SessionEventRouter(
 ) {
 
     private val stream = StreamBuffer()
+    private val streamFlush = CoalescedFlush(STREAM_FLUSH_MS, ::flushDeltas)
 
     val toolEvents = ToolEvents(s, edt, fireState)
     private val taskEvents = TaskEvents(s, edt, fireState)
@@ -26,6 +27,7 @@ class SessionEventRouter(
     fun onEvent(event: ClaudeEvent) {
         if (event is ClaudeEvent.Stream) {
             stream.buffer(event)
+            streamFlush.request()
             return
         }
         flushDeltas()
@@ -49,5 +51,9 @@ class SessionEventRouter(
             drained.usage?.let { s.tokens.onLiveUsage(it[0], it[1], it[2], it[3]) }
         }
         if (ApplicationManager.getApplication().isDispatchThread) apply() else edt { apply() }
+    }
+
+    private companion object {
+        const val STREAM_FLUSH_MS = 50
     }
 }

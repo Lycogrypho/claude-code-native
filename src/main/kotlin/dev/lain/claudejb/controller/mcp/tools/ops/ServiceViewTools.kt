@@ -118,7 +118,7 @@ internal class ServiceViewTools(private val project: Project, scope: CoroutineSc
 
     private suspend fun events(args: ToolArgs): ToolResult {
         val since = args.int("since", 0).toLong()
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = synchronized(events) { events.filter { it.seq > since } }
         return ToolResult.toon(
             buildJsonObject {

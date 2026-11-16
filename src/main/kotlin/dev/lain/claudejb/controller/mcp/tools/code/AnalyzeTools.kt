@@ -76,7 +76,7 @@ internal class AnalyzeTools(private val project: Project, private val actions: I
 
     private suspend fun dependencies(args: ToolArgs): ToolResult {
         val direction = args.optionalString("direction") ?: "forward"
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         if (direction == "backward") {
             actions.dispatch(BACKWARD_DEPENDENCIES, TargetContext.target(args))
             return ToolResult.toon(

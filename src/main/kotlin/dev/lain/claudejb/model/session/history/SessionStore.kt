@@ -33,7 +33,9 @@ internal object SessionStore {
     fun exists(sessionId: String): Boolean = locate(sessionId) != null
 
     fun readLines(sessionId: String): List<String>? =
-        locate(sessionId)?.let { runCatching { Files.readAllLines(it) }.getOrNull() }
+        locate(sessionId)?.let { file ->
+            runCatching { Files.newInputStream(file).bufferedReader(Charsets.UTF_8).use { it.readLines() } }.getOrNull()
+        }
 
     fun sessionDir(sessionId: String): Path? {
         val transcript = locate(sessionId) ?: return null

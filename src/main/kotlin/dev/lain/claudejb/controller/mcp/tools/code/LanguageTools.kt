@@ -33,7 +33,7 @@ internal class LanguageTools(private val project: Project, private val actions: 
 
     private suspend fun injections(args: ToolArgs): ToolResult {
         val path = args.string("path")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = smartReadAction(project) {
             val psiFile = Locations.psiFile(project, path)
             val document = psiFile.viewProvider.document

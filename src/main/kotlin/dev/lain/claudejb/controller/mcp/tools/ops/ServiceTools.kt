@@ -33,7 +33,7 @@ internal class ServiceTools(private val project: Project, private val scope: Cor
     )
 
     private suspend fun services(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val filter = args.optionalString("filter").orEmpty()
         val walk = withContext(Dispatchers.Default) { tree.walk(if (filter.isEmpty()) max else FILTER_WALK_CEILING) }
         val matching = walk.nodes.filter { filter.isEmpty() || it.matches(filter) }
@@ -56,7 +56,7 @@ internal class ServiceTools(private val project: Project, private val scope: Cor
 
     private suspend fun serviceActions(args: ToolArgs): ToolResult {
         val path = args.string("path")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val node = withContext(Dispatchers.Default) { tree.find(path) }
         val (entries, fromTree) = withContext(Dispatchers.EDT) {
             ServiceActions(project, node).run {

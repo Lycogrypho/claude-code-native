@@ -33,9 +33,18 @@ class StaleResumeTest {
     @Test
     fun `the transcript is looked up only when the launch failed early on a resume`() {
         var looked = 0
-        StaleResume.startsFresh(0, resumed = true, initialized = false) { looked++; false }
-        StaleResume.startsFresh(1, resumed = false, initialized = false) { looked++; false }
-        StaleResume.startsFresh(1, resumed = true, initialized = true) { looked++; false }
+        StaleResume.startsFresh(0, resumed = true, initialized = false) {
+            looked++
+            false
+        }
+        StaleResume.startsFresh(1, resumed = false, initialized = false) {
+            looked++
+            false
+        }
+        StaleResume.startsFresh(1, resumed = true, initialized = true) {
+            looked++
+            false
+        }
         assertTrue(looked == 0)
     }
 }

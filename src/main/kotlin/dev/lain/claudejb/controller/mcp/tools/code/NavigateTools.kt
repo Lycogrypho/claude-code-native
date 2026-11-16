@@ -40,7 +40,7 @@ internal class NavigateTools(private val project: Project) {
 
     private suspend fun findOne(args: ToolArgs): JsonObject {
         val query = args.string("query")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val libraries = args.boolean("libraries", false)
         val (outcome, rows) = indexed {
             val scope = if (libraries) GlobalSearchScope.allScope(project) else GlobalSearchScope.projectScope(project)
@@ -70,7 +70,7 @@ internal class NavigateTools(private val project: Project) {
     }
 
     private suspend fun referencesOne(args: ToolArgs): JsonObject {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = indexed {
             val rows = ArrayList<JsonObject>()
             ReferencesSearch.search(resolved(args)).forEach { reference ->
@@ -83,7 +83,7 @@ internal class NavigateTools(private val project: Project) {
     }
 
     private suspend fun implementationsOne(args: ToolArgs): JsonObject {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = indexed {
             val rows = ArrayList<JsonObject>()
             DefinitionsScopedSearch.search(resolved(args)).forEach { element ->

@@ -5,48 +5,10 @@
   const TX = (CC.transcript = CC.transcript || ({} as TranscriptNs));
 
   function el(tag: string, props?: HProps | null): HTMLElement {
-    if (CC.h) {
-      return CC.h(tag, props);
-    }
-    const node = document.createElement(tag);
-    const p = props || {};
-    if (p.class) {
-      node.className = String(p.class);
-    }
-    if (p.text != null) {
-      node.textContent = String(p.text);
-    }
-    if (p.html != null) {
-      node.innerHTML = String(p.html);
-    }
-    if (p.title != null) {
-      node.title = String(p.title);
-    }
-    const attrs = p.attrs as Record<string, unknown> | undefined;
-    if (attrs) {
-      for (const a in attrs) {
-        if (Object.prototype.hasOwnProperty.call(attrs, a)) {
-          node.setAttribute(a, String(attrs[a]));
-        }
-      }
-    }
-    const on = p.on as Record<string, EventListener> | undefined;
-    if (on) {
-      for (const ev in on) {
-        if (Object.prototype.hasOwnProperty.call(on, ev)) {
-          node.addEventListener(ev, on[ev]);
-        }
-      }
-    }
-    return node;
+    return CC.h(tag, props);
   }
   function esc(text: unknown): string {
-    if (CC.escape) {
-      return CC.escape(text == null ? '' : text);
-    }
-    const d = document.createElement('div');
-    d.textContent = text == null ? '' : String(text);
-    return d.innerHTML;
+    return CC.escape(text == null ? '' : text);
   }
   function md(text: unknown, hostLinks: boolean): string {
     if (CC.markdown) {

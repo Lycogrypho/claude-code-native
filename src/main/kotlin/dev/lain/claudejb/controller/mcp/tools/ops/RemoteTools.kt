@@ -84,7 +84,7 @@ internal class RemoteTools(private val project: Project, private val actions: Id
     }
 
     private suspend fun problems(group: String, tab: String, args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val (rows, tabId) = withContext(Dispatchers.EDT) {
             val collector = ProblemsCollector.getInstance(project)
             val all = collector.getProblemFiles().flatMap { collector.getFileProblems(it) } + collector.getOtherProblems()

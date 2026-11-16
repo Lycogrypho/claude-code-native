@@ -49,7 +49,7 @@ internal class GitReadTools(
     )
 
     private suspend fun status(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_STATUS_MAX)
+        val max = args.limit("max", DEFAULT_STATUS_MAX)
         val root = root()
         awaitChangeLists()
         val manager = ChangeListManager.getInstance(project)
@@ -76,7 +76,7 @@ internal class GitReadTools(
     }
 
     private suspend fun logOne(args: ToolArgs): JsonObject {
-        val max = args.int("max", DEFAULT_LOG_MAX)
+        val max = args.limit("max", DEFAULT_LOG_MAX)
         val hash = args.optionalString("hash")
         val scope = if (args.boolean("all_branches", false)) GitLogScope.EVERY_LINE_OF_DEVELOPMENT else GitLogScope.CURRENT_BRANCH
         root()
@@ -116,7 +116,7 @@ internal class GitReadTools(
     }
 
     private suspend fun branches(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_BRANCHES_MAX)
+        val max = args.limit("max", DEFAULT_BRANCHES_MAX)
         root()
         val refs = withContext(io) { history.refs() }
         return ToolResult.toon(

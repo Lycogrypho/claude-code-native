@@ -37,7 +37,7 @@ internal class InspectTools(private val project: Project) {
 
     private suspend fun inspections(args: ToolArgs): ToolResult {
         val query = args.optionalString("query").orEmpty()
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = readAction {
             val profile = InspectionProfileManager.getInstance(project).currentProfile
             profile.getInspectionTools(null)
@@ -65,7 +65,7 @@ internal class InspectTools(private val project: Project) {
         val path = args.string("path")
         val only = args.optionalString("inspection")
         val minimum = Severities.minimum(args)
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val psiFile = readAction { Locations.psiFile(project, path) }
         val tools = readAction { applicable(psiFile, only, minimum) }
         if (tools.isEmpty()) throw ToolException(missing(only, path))

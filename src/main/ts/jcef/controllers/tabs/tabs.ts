@@ -40,6 +40,7 @@
       status: status,
       selected: open,
       expanded: expanded,
+      key: w.kind + ':' + w.id,
       onClick: function () {
         if (open) showChat();
         else if (isAgent) showAgent(w.id);
@@ -103,6 +104,7 @@
       const owner = el.getAttribute('data-branch');
       if (owner) priorBranchScroll[owner] = el.scrollLeft;
     });
+    const focus = focusedPill(rows);
     while (rows.firstChild) rows.removeChild(rows.firstChild);
     const host = rows;
     lastCentred = centred;
@@ -111,6 +113,7 @@
     const chatPills = T.state.chats.map(function (chat) {
       return T.pill({
         label: chat.title,
+        key: 'chat:' + String(chat.id),
         selected: !!chat.selected,
         status: chat.attention ? 'attention' : null,
         onClick: function () {
@@ -134,6 +137,7 @@
       const subPills = [
         T.pill({
           label: 'Chat',
+          key: 'sub:chat',
           title: "This chat's own transcript",
           selected: !T.selected,
           onClick: showChat,
@@ -172,6 +176,36 @@
     bar.hidden = !chatPills.length && !work.length;
 
     T.drawn = T.drawnSignature();
+    if (focus) refocus(rows, focus);
+  }
+
+  interface PillFocus {
+    key: string | null;
+    onClose: boolean;
+  }
+
+  function focusedPill(rows: HTMLElement): PillFocus | null {
+    const active = document.activeElement as HTMLElement | null;
+    if (!active || !rows.contains(active)) return null;
+    const wrap = active.closest('[data-pill-key]');
+    return {
+      key: wrap ? wrap.getAttribute('data-pill-key') : null,
+      onClose: active.classList.contains('pill-x'),
+    };
+  }
+
+  function refocus(rows: HTMLElement, focus: PillFocus): void {
+    const wraps = rows.querySelectorAll<HTMLElement>('[data-pill-key]');
+    let wrap: HTMLElement | null = null;
+    for (let i = 0; i < wraps.length; i++) {
+      if (wraps[i].getAttribute('data-pill-key') === focus.key) wrap = wraps[i];
+    }
+    const home = wrap || rows.querySelector<HTMLElement>('.pill-wrap.selected');
+    if (!home) return;
+    const target =
+      (focus.onClose && wrap && home.querySelector<HTMLElement>('.pill-x')) ||
+      home.querySelector<HTMLElement>('.pill');
+    if (target) target.focus();
   }
 
   c.tabs = function (payload?: unknown): void {

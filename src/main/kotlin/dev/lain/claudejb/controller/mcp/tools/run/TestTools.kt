@@ -53,7 +53,7 @@ internal class TestTools(private val project: Project, scope: CoroutineScope) {
 
     private suspend fun runOne(args: ToolArgs, deadline: Deadline): JsonObject {
         val tailLines = OutputTail.lines(args)
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val job = args.optionalString("job")?.let { jobs.find(it) } ?: start(args, deadline)
         val outcome = jobs.await(job, deadline.remaining())
         val failures = outcome?.failures.orEmpty()
@@ -136,7 +136,7 @@ internal class TestTools(private val project: Project, scope: CoroutineScope) {
 
     private suspend fun tests(args: ToolArgs): ToolResult {
         val path = args.string("path")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val (rows, total) = indexed {
             val psiFile = Locations.psiFile(project, path)
             val document = psiFile.viewProvider.document

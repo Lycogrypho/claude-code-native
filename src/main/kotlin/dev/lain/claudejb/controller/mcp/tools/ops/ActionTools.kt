@@ -40,7 +40,7 @@ internal class ActionTools(private val project: Project, private val actions: Id
 
     private suspend fun list(args: ToolArgs): ToolResult {
         val query = args.optionalString("query").orEmpty()
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = withContext(Dispatchers.EDT) {
             val manager = ActionManager.getInstance()
             val context = TargetContext(project).project()

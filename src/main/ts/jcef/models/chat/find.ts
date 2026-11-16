@@ -47,12 +47,8 @@
     return activeIndex;
   };
 
-  function clearHighlights(): void {
-    const c = conversationEl();
-    if (!c) {
-      return;
-    }
-    const marks = c.querySelectorAll('mark.cc-hit');
+  function unmark(root: ParentNode): void {
+    const marks = root.querySelectorAll('mark.cc-hit');
     for (let i = 0; i < marks.length; i++) {
       const m = marks[i];
       const parent = m.parentNode;
@@ -63,6 +59,14 @@
       parent.replaceChild(txt, m);
       parent.normalize();
     }
+  }
+
+  function clearHighlights(): void {
+    const c = conversationEl();
+    if (!c) {
+      return;
+    }
+    unmark(c);
     searchHits = [];
   }
 
@@ -138,9 +142,32 @@
   }
   TX.runSearch = runSearch;
 
-  TX.refreshSearch = function (): void {
-    if (currentQuery) {
+  TX.refreshSearch = function (ids?: unknown[]): void {
+    if (!currentQuery) {
+      return;
+    }
+    const c = conversationEl();
+    if (!ids || !c) {
       runSearch(currentQuery, true);
+      return;
+    }
+    const lower = currentQuery.toLowerCase();
+    const active = searchHits[activeIndex] || null;
+    ids.forEach(function (id) {
+      const rec = rows.get(id);
+      if (!rec || !rec.bodyNode) {
+        return;
+      }
+      unmark(rec.bodyNode);
+      highlightInNode(rec.bodyNode, lower);
+    });
+    searchHits = Array.prototype.slice.call(c.querySelectorAll('mark.cc-hit')) as HTMLElement[];
+    const kept = active ? searchHits.indexOf(active) : -1;
+    if (searchHits.length) {
+      setActiveHit(kept >= 0 ? kept : Math.min(activeIndex, searchHits.length - 1), false);
+    } else {
+      activeIndex = 0;
+      refreshCount();
     }
   };
 
@@ -151,24 +178,8 @@
     if (typeof TX.resetFindBar === 'function') TX.resetFindBar();
   };
 
-  function subscribe(): boolean {
-    if (!CC.on) {
-      return false;
-    }
-    CC.on('search', function (q) {
-      TX.runSearch(q as string, false);
-      refreshCount();
-    });
-    return true;
-  }
-
-  if (!subscribe()) {
-    let tries = 0;
-    const iv = setInterval(function () {
-      tries++;
-      if (subscribe() || tries > 50) {
-        clearInterval(iv);
-      }
-    }, 20);
-  }
+  CC.on('search', function (q) {
+    TX.runSearch(q as string, false);
+    refreshCount();
+  });
 })();

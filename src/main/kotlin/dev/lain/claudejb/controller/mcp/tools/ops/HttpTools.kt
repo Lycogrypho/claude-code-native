@@ -52,7 +52,7 @@ internal class HttpTools(private val project: Project, scope: CoroutineScope, pr
     }
 
     private suspend fun files(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val paths = smartReadAction(project) {
             val scope = GlobalSearchScope.projectScope(project)
             EXTENSIONS.flatMap { FilenameIndex.getAllFilesByExt(project, it, scope) }.map { Locations.relative(project, it) }.sorted()

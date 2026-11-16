@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Path
 
 class OwnToolsTest {
 
@@ -72,14 +73,14 @@ class OwnToolsTest {
         assertTrue(OwnTools.isEdit(call) && !OwnTools.isRead(call))
         val review = OwnTools.reviewAs(call, edit, "/home/u/proj")!!
         assertEquals("Edit", review.toolName)
-        assertEquals("/home/u/proj/src/A.kt", review.input["file_path"]!!.jsonPrimitive.content)
+        assertEquals(Path.of("/home/u/proj").resolve("src/A.kt").toString(), review.input["file_path"]!!.jsonPrimitive.content)
         assertEquals("a", review.input["old_string"]!!.jsonPrimitive.content)
         assertNull(review.input["path"])
 
         val writing = OwnTools.parse("mcp__code__run", input("""{"tool":"write_file"}"""))!!
         val write = args("""{"tool":"write_file","args":{"path":"/abs/B.kt","content":"x"}}""")
         assertEquals("Write", OwnTools.reviewAs(writing, write, "/home/u/proj")!!.toolName)
-        assertEquals("/abs/B.kt", OwnTools.reviewAs(writing, write, null)!!.input["file_path"]!!.jsonPrimitive.content)
+        assertEquals(Path.of("/abs/B.kt").toString(), OwnTools.reviewAs(writing, write, null)!!.input["file_path"]!!.jsonPrimitive.content)
 
         val inserting = OwnTools.parse("mcp__code__run", input("""{"tool":"insert_text"}"""))!!
         val insert = args("""{"tool":"insert_text","args":{"path":"C.kt","line":3,"content":"y"}}""")
@@ -87,7 +88,7 @@ class OwnToolsTest {
         assertEquals("InsertText", inserted.toolName)
         val asWrite = OwnTools.asWrite(inserted, "a\nb\nc\n")!!
         assertEquals("Write", asWrite.toolName)
-        assertEquals("/p/C.kt", asWrite.input["file_path"]!!.jsonPrimitive.content)
+        assertEquals(Path.of("/p").resolve("C.kt").toString(), asWrite.input["file_path"]!!.jsonPrimitive.content)
         assertEquals("a\nb\ny\nc\n", asWrite.input["content"]!!.jsonPrimitive.content)
         assertNull(asWrite.input["line"])
 

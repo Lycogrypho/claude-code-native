@@ -58,10 +58,14 @@ object ClaudeBinaryLocator {
         return dirs.asSequence().map { File(it, name) }.firstOrNull { it.isFile && it.canExecute() }
     }
 
-    fun resolveNodeScript(binary: File): File? {
-        if (!SystemInfo.isWindows) return null
+    fun isBatch(binary: File): Boolean {
+        if (!SystemInfo.isWindows) return false
         val name = binary.name.lowercase()
-        if (!name.endsWith(".cmd") && !name.endsWith(".bat")) return null
+        return name.endsWith(".cmd") || name.endsWith(".bat")
+    }
+
+    fun resolveNodeScript(binary: File): File? {
+        if (!isBatch(binary)) return null
         val dir = binary.parentFile ?: return null
         File(dir, "node_modules\\@anthropic-ai\\claude-code\\cli.js").takeIf { it.isFile }?.let { return it }
         return runCatching {

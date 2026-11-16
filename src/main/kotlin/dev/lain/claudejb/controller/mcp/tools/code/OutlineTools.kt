@@ -39,40 +39,48 @@ internal class OutlineTools(private val project: Project) {
     private suspend fun outlineOne(args: ToolArgs): JsonObject {
         val path = args.string("path")
         val depth = args.int("depth", DEFAULT_DEPTH)
-        val psiFile = readAction { Locations.psiFile(project, path) }
-        val builder = readAction { LanguageStructureViewBuilder.getInstance().getStructureViewBuilder(psiFile) }
-            as? TreeBasedStructureViewBuilder
-            ?: throw ToolException("the IDE has no structure view for $path")
+        val budget = NodeBudget(args.limit("max", DEFAULT_MAX))
         val items = readAction {
+            val psiFile = Locations.psiFile(project, path)
+            val builder = LanguageStructureViewBuilder.getInstance().getStructureViewBuilder(psiFile)
+                as? TreeBasedStructureViewBuilder
+                ?: throw ToolException("the IDE has no structure view for $path")
             val model = builder.createStructureViewModel(null)
             try {
-                children(model.root, depth)
+                Outline(budget.fresh()).children(model.root, depth)
             } finally {
                 Disposer.dispose(model)
             }
         }
         return buildJsonObject {
             put("path", path)
+            put("truncated", budget.exhausted)
             put("symbols", items)
         }
     }
 
-    private fun children(element: TreeElement, depth: Int): JsonArray = buildJsonArray {
-        if (depth <= 0) return@buildJsonArray
-        for (child in element.children) add(node(child, depth - 1))
-    }
+    private inner class Outline(private val budget: NodeBudget) {
 
-    private fun node(element: TreeElement, depth: Int): JsonObject = buildJsonObject {
-        val presentation = element.presentation
-        put("name", presentation.presentableText ?: "")
-        presentation.locationString?.takeIf { it.isNotBlank() }?.let { put("detail", it) }
-        val value = (element as? StructureViewTreeElement)?.value as? PsiElement
-        if (value != null) {
-            put("kind", Locations.kind(value))
-            put("line", line(value))
+        fun children(element: TreeElement, depth: Int): JsonArray = buildJsonArray {
+            if (depth <= 0) return@buildJsonArray
+            for (child in element.children) {
+                if (!budget.take()) return@buildJsonArray
+                add(node(child, depth - 1))
+            }
         }
-        val nested = children(element, depth)
-        if (nested.isNotEmpty()) put("children", nested)
+
+        private fun node(element: TreeElement, depth: Int): JsonObject = buildJsonObject {
+            val presentation = element.presentation
+            put("name", presentation.presentableText ?: "")
+            presentation.locationString?.takeIf { it.isNotBlank() }?.let { put("detail", it) }
+            val value = (element as? StructureViewTreeElement)?.value as? PsiElement
+            if (value != null) {
+                put("kind", Locations.kind(value))
+                put("line", line(value))
+            }
+            val nested = children(element, depth)
+            if (nested.isNotEmpty()) put("children", nested)
+        }
     }
 
     private suspend fun symbolOne(args: ToolArgs): JsonObject = readAction {
@@ -104,6 +112,7 @@ internal class OutlineTools(private val project: Project) {
     companion object {
 
         private const val DEFAULT_DEPTH = 3
+        private const val DEFAULT_MAX = 300
         private const val SIGNATURE_CHARS = 200
         private val COMMENT_OR_ANNOTATION = listOf("/", "*", "@", "#")
 
@@ -114,6 +123,7 @@ internal class OutlineTools(private val project: Project) {
                 Param("path", "File path, absolute or relative to the project root", required = false),
                 Batch.paths("one outline each"),
                 Param("depth", "How many levels of nesting to return (default $DEFAULT_DEPTH)", type = "integer", required = false),
+                Param("max", "Maximum declarations to return (default $DEFAULT_MAX)", type = "integer", required = false),
             ),
         )
 

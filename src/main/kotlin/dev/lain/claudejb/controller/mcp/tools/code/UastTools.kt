@@ -35,7 +35,7 @@ internal class UastTools(private val project: Project) {
     private suspend fun tree(args: ToolArgs): ToolResult {
         val path = args.string("path")
         val depth = args.int("depth", DEFAULT_DEPTH)
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = smartReadAction(project) {
             val psiFile = Locations.psiFile(project, path)
             val file = UastFacade.convertElementWithParent(psiFile, UFile::class.java) as? UFile

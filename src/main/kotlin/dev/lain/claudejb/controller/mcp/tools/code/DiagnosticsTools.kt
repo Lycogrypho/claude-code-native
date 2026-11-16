@@ -20,6 +20,7 @@ import dev.lain.claudejb.model.mcp.ToolResult
 import dev.lain.claudejb.model.mcp.ToolSpec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -35,22 +36,26 @@ internal class DiagnosticsTools(
         "diagnostics",
         "What the IDE's own analysis flags: the highlights of one file, the Problems view for the whole project, and its tabs",
         listOf(
-            Tool(PROBLEMS) { ToolResult.toon(Batch.run(it, Batch.PATHS, ::problemsOne)) },
+            Tool(PROBLEMS) { args ->
+                val budget = AnalysisBudget((args.json[Batch.PATHS.key] as? JsonArray)?.size ?: 1)
+                ToolResult.toon(Batch.run(args, Batch.PATHS) { problemsOne(it, budget) })
+            },
             Tool(PROJECT_PROBLEMS, ::projectProblems),
             Tool(PROBLEMS_VIEW, ::problemsView),
         ),
     )
 
-    private suspend fun problemsOne(args: ToolArgs): JsonObject {
+    private suspend fun problemsOne(args: ToolArgs, budget: AnalysisBudget): JsonObject {
         val path = args.string("path")
         val severity = Severities.minimum(args)
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val (file, document) = readAction {
             val file = ReadTools.resolveFile(project, path)
             file to Locations.document(project, file)
         }
-        val highlights = daemon.collect(file, document, severity)
-            ?: throw ToolException("the IDE has not finished analysing $path; retry in a moment")
+        val wait = budget.nextShareMillis()
+        val highlights = daemon.collect(file, document, severity, wait)
+            ?: throw ToolException("the IDE has not finished analysing $path within ${wait / MILLIS} s; retry in a moment")
         return buildJsonObject {
             put("path", path)
             put("count", highlights.size)
@@ -75,7 +80,7 @@ internal class DiagnosticsTools(
     }
 
     private suspend fun projectProblems(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val group = args.optionalString("group")
         val (rows, total) = withContext(Dispatchers.EDT) {
             val collector = ProblemsCollector.getInstance(project)
@@ -149,6 +154,7 @@ internal class DiagnosticsTools(
     companion object {
 
         private const val DEFAULT_MAX = 100
+        private const val MILLIS = 1000L
         private val WHITESPACE = Regex("\\s+")
 
         val PROBLEMS = ToolSpec(

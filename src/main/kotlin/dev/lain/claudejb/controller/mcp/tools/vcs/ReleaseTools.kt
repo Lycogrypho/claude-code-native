@@ -31,7 +31,7 @@ internal class ReleaseTools(private val project: Project, gateway: () -> GitHubG
     )
 
     private suspend fun tags(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = rows(github.getJson("/tags?per_page=$max"))
         return ToolResult.toon(
             buildJsonObject {
@@ -55,7 +55,7 @@ internal class ReleaseTools(private val project: Project, gateway: () -> GitHubG
 
     private suspend fun workflowRuns(args: ToolArgs): ToolResult {
         val branch = args.optionalString("branch")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val query = "/actions/runs?per_page=$max" + (branch?.let { "&branch=$it" } ?: "")
         val rows = rows(map(github.getJson(query), "workflow_runs"))
         return ToolResult.toon(
@@ -109,7 +109,7 @@ internal class ReleaseTools(private val project: Project, gateway: () -> GitHubG
     }
 
     private suspend fun marketplace(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MARKETPLACE)
+        val max = args.limit("max", DEFAULT_MARKETPLACE)
         val updates = withContext(Dispatchers.IO) { MarketplaceGateway.updates(PluginIdentity.MARKETPLACE_ID, max) }
         return ToolResult.toon(
             buildJsonObject {

@@ -46,10 +46,29 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `find_files` and `list_directory` report `truncated` only when something was left out; `run_tests` runs
   a test file in the `test` task; `hierarchy` reports the method around a call, not a local variable or a
   lambda.
+- **Answers appear as they stream.** Streamed text was shown only when the next event arrived, so a long
+  block could appear at once; it is now flushed every 50 ms.
+- **A chat whose process has ended stops polling.** The quota timer and the agent scan no longer keep
+  running on a dead session.
+- **A session history with a damaged character still opens.** One undecodable byte in a transcript costs
+  one character instead of hiding the whole conversation.
+- **Launching through a `.cmd` wrapper on Windows no longer truncates the arguments.** When the launch
+  has to pass through cmd.exe, the system prompt travels in a file.
+- **The transcript, the readout and the tab bar repaint only what changed.** With a find query open, a
+  new message re-highlights its own rows; the tab bar keeps the keyboard focus when it is redrawn.
+- **Assistive technology**: the chosen option of a question is exposed as pressed and grouped under its
+  question, the free-text answer is labelled, and the crosses that remove a queued prompt, remove an
+  attachment or close the find bar are real buttons, reachable by keyboard.
+- **IDE tools** (the plugin's MCP servers): every `max` has a ceiling of 1000; `file_outline` takes `max`
+  and reports `truncated`; `problems` on several files answers within its own timeout, file by file,
+  instead of failing whole; background jobs nobody collects are dropped after ten minutes.
 
 ### Security
 - **The diff containment check resolves symbolic links and junctions on Windows.** A link inside the
   project that points outside it no longer counts as inside, and a dangling link is refused.
+- **MCP server configs no longer travel on the `claude` command line.** The config, `Authorization`
+  headers included, is written to a file only the current user can read and removed when the process
+  ends; the command line carries the path.
 
 ### Added
 - **Every question Claude asks ends with an Other choice.** Picking it opens a text field, and the answer

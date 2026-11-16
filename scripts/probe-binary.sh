@@ -1,23 +1,4 @@
 #!/usr/bin/env bash
-#
-# probe-binary.sh — sanity-check the local `claude` binary against the set of
-# stream-json event `type`s that the plugin's ProtocolParser knows how to handle.
-#
-# Usage:
-#   bash scripts/probe-binary.sh [path-to-claude] [fixture.jsonl]
-#
-# Defaults:
-#   path-to-claude = $HOME/.local/bin/claude
-#   fixture.jsonl  = a single canned user message ("Say hi and exit.")
-#
-# Exit codes:
-#   0  -> only expected `type` values seen
-#   1  -> usage / environment error (binary missing, timeout with no output, ...)
-#   2  -> at least one UNKNOWN_EVENT_TYPE was observed (drift signal for CI)
-#
-# This is meant to be cheap and offline-friendly enough for CI: it does NOT
-# require an API key to be valid (we only care about what `type`s the binary
-# emits; even an auth error surfaces as a `result`/`system` event we recognise).
 
 set -euo pipefail
 
@@ -32,8 +13,6 @@ fi
 TS="$(date +%s)"
 OUT="/tmp/probe-${TS}.jsonl"
 
-# Hardcoded inline expected types — keep in sync with
-# src/main/kotlin/dev/lain/claudejb/model/protocol/parse/ProtocolParser.kt
 EXPECTED_TYPES=(system assistant user result stream_event control_request control_response rate_limit_event)
 
 is_expected() {
@@ -45,7 +24,6 @@ is_expected() {
     return 1
 }
 
-# Build the stdin payload: either user-supplied fixture or a canned one-shot.
 build_stdin() {
     if [[ -n "$FIXTURE" ]]; then
         if [[ ! -r "$FIXTURE" ]]; then
@@ -61,9 +39,6 @@ build_stdin() {
 echo "probe-binary: binary=$BINARY"
 echo "probe-binary: capturing stdout -> $OUT"
 
-# Run the binary with the same flags the plugin uses to talk to it.
-# `timeout 60` caps the whole exchange; we don't care about its exit code,
-# only about what landed on stdout.
 set +e
 build_stdin | timeout 60 "$BINARY" \
     --print \
@@ -81,10 +56,6 @@ if [[ ! -s "$OUT" ]]; then
     exit 1
 fi
 
-# Extract unique `type` values from the NDJSON stream.
-# We use a small Python pass to stay robust against malformed lines (the lenient
-# codec in production swallows those silently — that's exactly the thing we want
-# to surface here).
 mapfile -t SEEN_TYPES < <(python3 - "$OUT" <<'PY'
 import json, sys, collections
 counts = collections.Counter()

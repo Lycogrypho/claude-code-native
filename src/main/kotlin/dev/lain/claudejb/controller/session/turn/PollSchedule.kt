@@ -54,7 +54,7 @@ class PollSchedule(
     }
 
     private fun agentStateCouldChange(): Boolean =
-        agentRevival.anyRunningAgent() || (turnActive() && agentRevival.anySettledAgent())
+        isRunning() && (agentRevival.anyRunningAgent() || (turnActive() && agentRevival.anySettledAgent()))
 
     private fun pollAgentRevival() {
         if (!agentStateCouldChange()) {
@@ -77,7 +77,10 @@ class PollSchedule(
     fun stopQuota() = quotaPollTimer.stop()
 
     fun pollQuota() {
-        if (!isRunning()) return
+        if (!isRunning()) {
+            quotaPollTimer.stop()
+            return
+        }
         if (quotaPollInFlight) return
         quotaPollInFlight = true
         var pending = 2

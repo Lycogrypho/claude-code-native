@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""One-shot: split `app.css` into per-component files at its own section boundaries.
-
-Mechanical by construction and verified as such: the parts are contiguous line ranges of the original, in
-the original order, and the script refuses to write anything unless concatenating them reproduces the input
-byte for byte. CSS order is semantics (later rules win), so a split that reorders is a rewrite, not a split.
-
-Run once, from the repository root. Kept in the tree as the record of how the parts were cut.
-"""
 
 import sys
 from pathlib import Path
@@ -16,7 +8,6 @@ JCEF = ROOT / "src" / "main" / "resources" / "jcef"
 SOURCE = JCEF / "app.css"
 OUT = JCEF / "css"
 
-# (file, first line, last line) — 1-based and inclusive, cut at the file's own section banners.
 PARTS = [
     ("base.css", 1, 193),
     ("transcript.css", 194, 953),

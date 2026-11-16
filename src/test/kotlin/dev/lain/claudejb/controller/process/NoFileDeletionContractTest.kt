@@ -25,6 +25,7 @@ class NoFileDeletionContractTest {
     private companion object {
         val ALLOWED = setOf(
             "CredentialsVault.kt",
+            "LaunchFiles.kt",
             "LegacyProjectSettings.kt",
             "LegacySessionHistory.kt",
             "SettingsStore.kt",
@@ -41,6 +42,28 @@ class NoFileDeletionContractTest {
         assertTrue(bad.isEmpty()) {
             "SocketHome.kt may only remove its own token file and the entries of the socket directory it " +
                 "created under the temp dir.\n" + bad.joinToString("\n") { "${home.name}:${it.first}: ${it.second}" }
+        }
+    }
+
+    @Test
+    fun `LaunchFiles only deletes the files it wrote and the directory it created`() {
+        val launch = ktFiles().first { it.name == "LaunchFiles.kt" }
+        val allowed = setOf(
+            "written.forEach { file -> runCatching { Files.deleteIfExists(file) } }",
+            "dir?.let { own -> runCatching { Files.deleteIfExists(own) } }",
+        )
+        val bad = hits(launch, single).filterNot { (_, line) -> line in allowed }
+        assertTrue(bad.isEmpty()) {
+            "LaunchFiles.kt may only remove the files it wrote itself, one by one, and the directory it created " +
+                "for them under the temp dir.\n" + bad.joinToString("\n") { "${launch.name}:${it.first}: ${it.second}" }
+        }
+        val text = launch.readText()
+        assertTrue(text.contains("write(home.resolve(file.name), value).also { written.add(it) }")) {
+            "LaunchFiles.kt no longer records exactly the files it writes inside its own directory — this contract " +
+                "is checking the wrong thing."
+        }
+        assertTrue(text.contains("Files.createTempDirectory(base, DIR_PREFIX")) {
+            "LaunchFiles.kt no longer creates the directory it deletes."
         }
     }
 

@@ -1,30 +1,4 @@
 #!/usr/bin/env bash
-# Generate the CI-only GPG key that signs release artifacts in GitHub Actions.
-#
-# WHY THIS KEY IS SEPARATE FROM THE MAINTAINER KEY, AND MUST STAY SEPARATE
-# ----------------------------------------------------------------------
-# The maintainer key lives on a YubiKey. It cannot be exported — that is the point of it — so
-# it cannot sign inside a runner. Automating artifact signatures therefore requires a SOFTWARE key whose
-# private material sits in a GitHub secret, readable by the job that references it and by anything that
-# compromises the runner.
-#
-# That is a real, accepted trade-off, and the mitigation is that the two keys must never be confusable:
-#
-#   * the MAINTAINER key signs COMMITS and TAGS. That signature means "a person chose to release this."
-#   * this CI key signs RELEASE ARTIFACTS. That signature means "this workflow produced these bytes."
-#
-# If both signatures looked alike, a leaked CI key would impersonate the maintainer. So this key carries a
-# uid that says what it is out loud, and it EXPIRES — a leaked key that expires stops being useful on its
-# own, without anyone having to notice the leak first.
-#
-# This script never touches your real keyring: it works in a throwaway GNUPGHOME under a temp directory,
-# emits what you need, and deletes it.
-#
-#   ./scripts/gen-ci-signing-key.sh                 # print everything (manual setup / rotation)
-#   ./scripts/gen-ci-signing-key.sh --outdir DIR    # write private.asc, public.asc, passphrase into DIR
-#
-# --outdir exists so scripts/bootstrap-ci.sh can pipe the private key straight into `gh secret set`
-# without it ever crossing a terminal, a scrollback buffer, or a shell history.
 set -euo pipefail
 
 command -v gpg >/dev/null || { echo "gpg is required" >&2; exit 1; }
@@ -39,25 +13,6 @@ fi
 NAME="Claude Code Native CI (release artifacts only — NOT the maintainer key)"
 EXPIRY="1y"
 
-# The key MUST carry an email, and it must be the maintainer's verified GitHub address.
-#
-# The first version of this script set only Name-Real, so the key was generated with no email in its uid
-# at all. Everything still worked — artifacts were signed, `gpg --verify` passed — except the one thing
-# that is visible to everyone: GitHub never showed the release tag as Verified, and could not, because
-# marking a signature Verified requires THREE things to agree (docs: "Associating an email with your GPG
-# key"): the tagger's email, an email in a uid of the registered key, and a verified email on the account.
-# A key with no email fails the second forever. GitHub's own API reported the key as `emails=` — empty.
-#
-# Using the maintainer's address here does blunt one edge of the separation this file argues for, so state
-# what actually keeps the two keys distinguishable now: the uid NAME says out loud that this is a CI key,
-# the key EXPIRES after a year, and it is certified by the hardware key rather than merely asserted. What
-# it no longer provides is separation by address — and it never could, because GitHub offers no way to
-# verify a tag signed by a key bearing an address that is not yours.
-#
-# READ from the maintainer key, never written here. The project publishes no contact address anywhere (see
-# CHANGELOG 5.0.0), and a committed script is published: hardcoding it would put the address into the
-# repository, into every clone, and into the search index — undoing that decision to save one lookup.
-# It also cannot drift, since the address that must match is by definition the one on the key.
 maintainer_fpr="${CI_KEY_FROM:-$(git config --get user.signingkey || true)}"
 [ -n "$maintainer_fpr" ] || {
   echo "error: git config user.signingkey is unset, so the maintainer key is unknown." >&2

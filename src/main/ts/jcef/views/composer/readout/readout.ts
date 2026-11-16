@@ -6,12 +6,32 @@
 
   const h = CX.h;
 
+  let lastReadout: string | null = null;
+  let lastUsage: string | null = null;
+
   CX.renderReadout = function (s: ComposerState): void {
     const els = CX.els;
     if (!els || !els.readout) return;
     const ro = els.readout;
-    ro.innerHTML = '';
+    const shown = JSON.stringify([
+      !!s.turnActive,
+      s.thinkingStatus,
+      s.context && s.context.pct,
+      s.tokensOut,
+      s.reasoningTokens,
+      s.costUsd,
+    ]);
+    if (shown !== lastReadout || !ro.firstChild) {
+      lastReadout = shown;
+      paintReadout(ro, s);
+    }
+    renderUsageBars(s);
+    if (typeof CX.renderMini === 'function') CX.renderMini();
+  };
+
+  function paintReadout(ro: HTMLElement, s: ComposerState): void {
     const running = !!s.turnActive;
+    ro.innerHTML = '';
 
     const status = h(
       'span',
@@ -39,17 +59,21 @@
     ro.removeAttribute('hidden');
     if (running && s.thinkingStatus) ro.classList.add('thinking');
     else ro.classList.remove('thinking');
-
-    renderUsageBars(s);
-    if (typeof CX.renderMini === 'function') CX.renderMini();
-  };
+  }
 
   function renderUsageBars(s: ComposerState): void {
     const els = CX.els;
     if (!els || !els.usageBars) return;
     const host = els.usageBars;
-    host.innerHTML = '';
     const usage = Array.isArray(s.usage) ? s.usage : [];
+    const shownUsage = JSON.stringify(
+      usage.map(function (win) {
+        return win ? [win.label, win.pct, CC.resetIn(win.resetsAt)] : null;
+      })
+    );
+    if (shownUsage === lastUsage && (host.firstChild || host.hasAttribute('hidden'))) return;
+    lastUsage = shownUsage;
+    host.innerHTML = '';
     let shown = 0;
     for (let u = 0; u < usage.length; u++) {
       const win = usage[u] || {};

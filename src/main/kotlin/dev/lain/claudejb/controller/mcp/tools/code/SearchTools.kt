@@ -45,7 +45,7 @@ internal class SearchTools(private val project: Project, private val io: Corouti
 
     private suspend fun searchOne(args: ToolArgs): JsonObject {
         val query = args.string("query")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val model = FindModel().apply {
             stringToFind = query
             isRegularExpressions = args.boolean("regex", false)
@@ -89,7 +89,7 @@ internal class SearchTools(private val project: Project, private val io: Corouti
 
     private suspend fun findOne(args: ToolArgs): JsonObject {
         val name = args.string("name")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val all = readAction {
             try {
                 if ('*' in name || '?' in name) glob(name, max + 1) else byName(name, max + 1)
@@ -122,7 +122,7 @@ internal class SearchTools(private val project: Project, private val io: Corouti
     private suspend fun listDirectory(args: ToolArgs): ToolResult {
         val path = args.optionalString("path") ?: "."
         val depth = args.int("depth", 1)
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         if (depth < 1 || max < 1) throw ToolException("depth and max start at 1")
         val all = readAction {
             val root = ReadTools.resolveDirectory(project, path)

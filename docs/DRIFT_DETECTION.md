@@ -20,8 +20,10 @@ published independently. **Drift** = the latest SDK/binary exposes a protocol ki
    doesn't handle (a bare version bump with a fully-covered surface passes).
 
 Implementation: `src/test/kotlin/dev/lain/claudejb/drift/` — pure `ProtocolSurface` + `DriftDetector`
-(offline unit-tested in `DriftDetectorTest`) and the `@Tag("driftLive")` `DriftLiveCheck` (the live
-download + probe, run only by the `checkDrift` task, excluded from the normal `test` task).
+(offline unit-tested in `DriftDetectorTest`) — and `src/driftCheck/kotlin/dev/lain/claudejb/drift/`,
+the `@Tag("driftLive")` `DriftLiveCheck` (the live download + probe). `DriftLiveCheck` has its own
+source set, `driftCheck`, which only the `checkDrift` task runs: on the `test` source set the IDE
+offered `checkDrift` for every test file.
 
 `KNOWN_SUBTYPES` is the **full triaged surface** — every subtype the plugin is aware of, whether it
 *parses* it (system subtypes, `can_use_tool`, `hook_callback`), *sends* it (host→binary control:

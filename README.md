@@ -482,6 +482,7 @@ comments, one gateway file per external plugin, the guard off limits — are in
 - [`docs/FAQ.md`](docs/FAQ.md) · [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) · [`docs/BINARY_COMPAT.md`](docs/BINARY_COMPAT.md)
 - [`docs/RELEASE_PROCEDURE.md`](docs/RELEASE_PROCEDURE.md) · [`docs/BRANCHING.md`](docs/BRANCHING.md) · [`docs/CI_SETUP.md`](docs/CI_SETUP.md)
 - [`docs/adr/`](docs/adr) — the decisions, the threat model among them
+- [`docs/BUILD_NOTES.md`](docs/BUILD_NOTES.md) · [`docs/SCRIPT_NOTES.md`](docs/SCRIPT_NOTES.md) · [`docs/PAGE_NOTES.md`](docs/PAGE_NOTES.md) — the reasons behind the build, the scripts, the page shell and the descriptors, which carry no comments
 - [`CHANGELOG.md`](CHANGELOG.md) · [`RELEASE_NOTES.md`](RELEASE_NOTES.md)
 
 ## Licence and attribution

@@ -44,7 +44,7 @@ internal class RefactorTools(private val project: Project, private val refactori
 
     private suspend fun rename(args: ToolArgs): ToolResult {
         val newName = args.string("new_name")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val (element, from, refactoring) = readAction {
             val element = refactorings.target(args)
             val from = refactorings.name(element)
@@ -122,7 +122,7 @@ internal class RefactorTools(private val project: Project, private val refactori
     }
 
     private suspend fun safeDelete(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val (target, refactoring) = readAction {
             val element = refactorings.target(args)
             if (!SafeDeleteProcessor.validElement(element)) {

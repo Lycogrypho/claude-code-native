@@ -43,20 +43,11 @@ class ClaudeProcess(
     fun start() {
         LogRedaction.remember(extraEnv)
         val nodeScript = ClaudeBinaryLocator.resolveNodeScript(binary)
-        val commandLine = (
-            if (nodeScript != null) {
-                GeneralCommandLine(ClaudeBinaryLocator.locateNode(binary, nodeOverride))
-                    .withParameters(nodeScript.absolutePath).withParameters(args)
-            } else {
-                GeneralCommandLine(binary.absolutePath).withParameters(args)
-            }
-            )
-            .withWorkDirectory(workDir)
-            .withCharset(StandardCharsets.UTF_8)
-            .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
-            .withEnvironment(extraEnv)
-
-        val processHandler = KillableProcessHandler(commandLine)
+        val throughShell = nodeScript == null && ClaudeBinaryLocator.isBatch(binary)
+        val files = LaunchFiles.externalise(args, promptToFile = throughShell)
+        val processHandler = runCatching { KillableProcessHandler(commandLine(nodeScript, files.args)) }
+            .onFailure { files.discard() }
+            .getOrThrow()
         processHandler.setShouldDestroyProcessRecursively(true)
         processHandler.addProcessListener(object : ProcessListener {
             override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
@@ -70,12 +61,26 @@ class ClaudeProcess(
             override fun processTerminated(event: ProcessEvent) {
                 log.info("claude terminated, exitCode=${event.exitCode}")
                 stdoutLines.finish()?.let(::handleLine)
+                files.discard()
                 onTerminated(event.exitCode)
             }
         })
         handler = processHandler
         processHandler.startNotify()
         log.info("claude started: ${binary.name} (${args.size} args)")
+    }
+
+    private fun commandLine(nodeScript: File?, launchArgs: List<String>): GeneralCommandLine {
+        val command = if (nodeScript != null) {
+            GeneralCommandLine(ClaudeBinaryLocator.locateNode(binary, nodeOverride)).withParameters(nodeScript.absolutePath)
+        } else {
+            GeneralCommandLine(binary.absolutePath)
+        }
+        return command.withParameters(launchArgs)
+            .withWorkDirectory(workDir)
+            .withCharset(StandardCharsets.UTF_8)
+            .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.CONSOLE)
+            .withEnvironment(extraEnv)
     }
 
     private fun consumeStderr(text: String) {

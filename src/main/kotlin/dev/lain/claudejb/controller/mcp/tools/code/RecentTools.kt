@@ -34,7 +34,7 @@ internal class RecentTools(private val project: Project, private val actions: Id
 
     private suspend fun recent(args: ToolArgs): ToolResult {
         val kind = args.optionalString("kind") ?: "files"
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val files = withContext(Dispatchers.EDT) {
             when (kind) {
                 "files" -> EditorHistoryManager.getInstance(project).fileList.asReversed()

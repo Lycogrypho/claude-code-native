@@ -35,7 +35,7 @@
     function optionButton(qText: string, label: string, desc: string, preview: string, multi: boolean) {
       const props: HProps = {
         class: 'q-option',
-        attrs: { type: 'button' },
+        attrs: { type: 'button', 'aria-pressed': 'false' },
         on: {
           click: function () {
             toggle(qText, label, multi);
@@ -57,14 +57,20 @@
     function otherInput(qText: string): HTMLInputElement {
       const input = h('input', {
         class: 'q-other-input',
-        attrs: { type: 'text', placeholder: 'Type your own answer', hidden: 'hidden' },
+        attrs: {
+          type: 'text',
+          placeholder: 'Type your own answer',
+          hidden: 'hidden',
+          'aria-label': 'Your own answer to: ' + qText,
+        },
       }) as HTMLInputElement;
       input.addEventListener('input', refreshSubmit);
       otherInputs[qText] = input;
       return input;
     }
 
-    const qBlocks = questions.map(function (q) {
+    const qBlocks = questions.map(function (q, qIndex) {
+      const labelId = 'q-' + String(id).replace(/[^\w-]/g, '_') + '-' + qIndex;
       const qText = q && q.question != null ? String(q.question) : '';
       const multi = !!(q && q.multiSelect);
       const options = q && Array.isArray(q.options) ? q.options : [];
@@ -85,8 +91,8 @@
         'div',
         { class: 'q-block' },
         q && q.header ? h('div', { class: 'q-header', text: String(q.header) }) : null,
-        h('div', { class: 'q-question', text: qText }),
-        h('div', { class: 'q-options' }, optionEls),
+        h('div', { class: 'q-question', text: qText, attrs: { id: labelId } }),
+        h('div', { class: 'q-options', attrs: { role: 'group', 'aria-labelledby': labelId } }, optionEls),
         otherInput(qText)
       );
     });
@@ -139,8 +145,9 @@
       for (let i = 0; i < opts.length; i++) {
         const el = opts[i];
         const arr = (el.__qText != null && selections[el.__qText]) || [];
-        if (el.__label != null && arr.indexOf(el.__label) >= 0) el.classList.add('selected');
-        else el.classList.remove('selected');
+        const chosen = el.__label != null && arr.indexOf(el.__label) >= 0;
+        el.classList.toggle('selected', chosen);
+        el.setAttribute('aria-pressed', String(chosen));
       }
       Object.keys(otherInputs).forEach(function (qText) {
         if (selections[qText].indexOf(OTHER) >= 0) otherInputs[qText].removeAttribute('hidden');

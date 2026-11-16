@@ -36,7 +36,12 @@ internal object Severities {
 
 internal class DaemonHighlights(private val project: Project) {
 
-    suspend fun collect(file: VirtualFile, document: Document, minSeverity: HighlightSeverity?): List<Highlight>? {
+    suspend fun collect(
+        file: VirtualFile,
+        document: Document,
+        minSeverity: HighlightSeverity?,
+        waitMillis: Long,
+    ): List<Highlight>? {
         val analysed = CompletableDeferred<Unit>()
         val connection = project.messageBus.connect()
         try {
@@ -54,7 +59,7 @@ internal class DaemonHighlights(private val project: Project) {
                 opened
             }
             if (editors.any { DaemonCodeAnalyzerEx.isHighlightingCompleted(it, project) }) analysed.complete(Unit)
-            withTimeoutOrNull(ANALYSIS_TIMEOUT_MILLIS) { analysed.await() } ?: return null
+            withTimeoutOrNull(waitMillis) { analysed.await() } ?: return null
         } finally {
             connection.disconnect()
         }
@@ -76,9 +81,5 @@ internal class DaemonHighlights(private val project: Project) {
             }
             out
         }
-    }
-
-    private companion object {
-        const val ANALYSIS_TIMEOUT_MILLIS = 30_000L
     }
 }

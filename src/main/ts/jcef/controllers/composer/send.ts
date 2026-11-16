@@ -142,11 +142,11 @@
     for (let i = 0; i < queue.length; i++) {
       const text = String(queue[i]);
       const index = i;
-      const x = h('span', {
+      const x = h('button', {
         class: 'queue-x',
         text: '✕',
         title: 'Remove from queue',
-        attrs: { role: 'button', 'aria-label': 'Remove queued prompt' },
+        attrs: { type: 'button', 'aria-label': 'Remove queued prompt' },
         on: {
           click: function (e: Event) {
             e.preventDefault();

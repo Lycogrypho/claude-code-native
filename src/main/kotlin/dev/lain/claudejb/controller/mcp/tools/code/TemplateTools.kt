@@ -52,7 +52,7 @@ internal class TemplateTools(private val project: Project, private val targets: 
 
     private suspend fun templates(args: ToolArgs): ToolResult {
         val query = args.optionalString("query").orEmpty()
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val all = TemplateSettings.getInstance().templates
             .filter { !it.isDeactivated }
             .filter { query.isEmpty() || listOf(it.key, it.groupName, it.description.orEmpty()).any { s -> s.contains(query, true) } }
@@ -119,7 +119,7 @@ internal class TemplateTools(private val project: Project, private val targets: 
 
     private suspend fun fileTemplates(args: ToolArgs): ToolResult {
         val query = args.optionalString("query").orEmpty()
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val manager = FileTemplateManager.getInstance(project)
         val all = (manager.allTemplates.toList() + manager.internalTemplates.toList())
             .filter { query.isEmpty() || it.name.contains(query, true) || it.extension.contains(query, true) }

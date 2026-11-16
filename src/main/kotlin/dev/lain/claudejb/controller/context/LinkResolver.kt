@@ -131,31 +131,41 @@ object LinkResolver {
         }
     }
 
+    private class NameScan(val root: String, val atMillis: Long, val files: Map<String, List<File>>)
+
+    @Volatile private var lastScan: NameScan? = null
+
+    @Volatile internal var scanClockMillis: () -> Long = System::currentTimeMillis
+
+    internal const val SCAN_TTL_MILLIS = 10_000L
+
     private fun scanTree(root: File, wanted: Set<String>): Map<String, List<File>> {
-        val hits = HashMap<String, MutableList<File>>()
+        val now = scanClockMillis()
+        val fresh = lastScan?.takeIf { it.root == root.path && now - it.atMillis in 0..SCAN_TTL_MILLIS }
+        val scan = fresh ?: NameScan(root.path, now, filesByName(root)).also { lastScan = it }
+        return scan.files.filterKeys { it in wanted }
+    }
+
+    private fun filesByName(root: File): Map<String, List<File>> {
+        val byName = HashMap<String, MutableList<File>>()
         val queue = ArrayDeque<File>().apply { add(root) }
         var seen = 0
         while (queue.isNotEmpty() && seen < MAX_SCAN_ENTRIES) {
             val children = queue.removeFirst().listFiles() ?: continue
             for (child in children) {
                 seen++
-                visit(child, wanted, queue, hits)
+                visit(child, queue, byName)
             }
         }
-        return hits
+        return byName
     }
 
-    private fun visit(
-        child: File,
-        wanted: Set<String>,
-        queue: ArrayDeque<File>,
-        hits: MutableMap<String, MutableList<File>>,
-    ) {
+    private fun visit(child: File, queue: ArrayDeque<File>, byName: MutableMap<String, MutableList<File>>) {
         if (child.isDirectory) {
             if (isWorthDescending(child)) queue.addLast(child)
             return
         }
-        if (child.name in wanted) hits.getOrPut(child.name) { ArrayList() }.add(child)
+        byName.getOrPut(child.name) { ArrayList() }.add(child)
     }
 
     private fun isWorthDescending(dir: File): Boolean = dir.name !in SKIP_DIRS && !dir.name.startsWith(".")

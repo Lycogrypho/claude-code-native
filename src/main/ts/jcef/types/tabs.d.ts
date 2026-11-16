@@ -39,6 +39,7 @@ interface TabPillOptions {
   status?: string | null;
   selected?: boolean;
   expanded?: boolean | null;
+  key?: string;
   onClick: (ev: Event) => void;
   onClose?: (() => void) | null;
 }

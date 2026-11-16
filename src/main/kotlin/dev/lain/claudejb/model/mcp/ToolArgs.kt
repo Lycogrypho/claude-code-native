@@ -28,6 +28,8 @@ class ToolArgs(val json: JsonObject, val toolUseId: String? = null) {
         return raw.toIntOrNull() ?: throw ToolException("argument $key must be an integer")
     }
 
+    fun limit(key: String, default: Int, ceiling: Int = MAX_LIMIT): Int = int(key, default).coerceIn(1, ceiling)
+
     fun boolean(key: String, default: Boolean): Boolean = optionalBoolean(key) ?: default
 
     fun optionalBoolean(key: String): Boolean? = when (optionalString(key)) {
@@ -35,5 +37,9 @@ class ToolArgs(val json: JsonObject, val toolUseId: String? = null) {
         "true" -> true
         "false" -> false
         else -> throw ToolException("argument $key must be a boolean")
+    }
+
+    companion object {
+        const val MAX_LIMIT = 1000
     }
 }

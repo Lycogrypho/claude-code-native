@@ -19,8 +19,15 @@ Division of labour, so neither file rots:
 |---|---|---|
 | JDK | **21**, the JetBrains Runtime | `export JAVA_HOME=~/.jdks/jbr-21.0.11` (or your JBR 21). The IDE runs on JBR 21 — that is the ceiling, not a preference. |
 | Gradle | wrapper, **9.5.1** | Always `./gradlew`, never a system Gradle. |
-| Node | any current LTS | Frontend tests only. Nothing from npm ships in the plugin. |
+| Node | any current LTS | Frontend tests, and on Windows the launcher of the fake `claude`. Nothing from npm ships in the plugin. |
+| Python | 3 | The fake `claude` of the integration tier (`bin/fake-claude`) is a Python script. Linux and macOS run it by its shebang; Windows runs it through `bin/fake-claude.cmd`, node and the `py` launcher. |
 | `claude` binary | preinstalled, on `PATH` or `~/.local/bin` | Required at *runtime* by the plugin and by `checkDrift`. The plugin never downloads one. |
+
+Windows is a supported development platform: both suites are green there. Five tests that assert POSIX
+file permissions are skipped where the filesystem has none, and say so.
+
+The Gradle daemon is pinned to Java 21 (`gradle/gradle-daemon-jvm.properties`), so the gates run whatever
+JDK launches the wrapper.
 
 Every Gradle command below assumes `JAVA_HOME` is set. A wrong or missing `JAVA_HOME` fails with
 `ERROR: JAVA_HOME is set to an invalid directory` — note the **uppercase** ERROR, which a lowercase-only grep

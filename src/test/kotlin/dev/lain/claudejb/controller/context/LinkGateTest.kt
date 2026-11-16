@@ -50,7 +50,8 @@ class LinkGateTest {
     @Test
     fun `a traversal out of the project is not openable`() {
         val root = File(tmp.toFile(), "proj").apply { mkdirs() }
-        assertFalse(LinkResolver.isOpenable("${root.path}/../../../../etc/passwd", root.path))
+        val toFilesystemRoot = "../".repeat(root.toPath().toAbsolutePath().nameCount)
+        assertFalse(LinkResolver.isOpenable("${root.path}/${toFilesystemRoot}etc/passwd", root.path))
     }
 
     @Test

@@ -66,7 +66,7 @@ internal class ProjectTools(private val project: Project) {
     }
 
     private suspend fun modules(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val (rows, total) = readAction {
             val all = ModuleManager.getInstance(project).modules
             all.take(max).map(::moduleRow) to all.size
@@ -84,7 +84,7 @@ internal class ProjectTools(private val project: Project) {
 
     private suspend fun dependencies(args: ToolArgs): ToolResult {
         val name = args.string("module")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val (rows, total) = readAction {
             val entries = ModuleRootManager.getInstance(module(name)).orderEntries
             entries.take(max).map(::dependencyRow) to entries.size

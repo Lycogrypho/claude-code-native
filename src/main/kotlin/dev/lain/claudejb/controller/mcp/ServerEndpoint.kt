@@ -11,6 +11,7 @@ import dev.lain.claudejb.model.session.launch.IdeServer
 import dev.lain.claudejb.util.thisLogger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
@@ -100,21 +101,20 @@ internal class ServerEndpoint(
                 send(JsonRpc.error(request.id, JsonRpc.INVALID_REQUEST, REJECTED))
                 return
             }
-            if (inFlight.get() >= QUEUE_DEPTH) {
+            if (inFlight.incrementAndGet() > QUEUE_DEPTH) {
+                inFlight.decrementAndGet()
                 val busy = "$QUEUE_DEPTH requests are already in flight on ${server.key}; retry when one answers"
                 send(JsonRpc.error(request.id, JsonRpc.INTERNAL_ERROR, busy))
                 return
             }
             val key = request.id.toString()
-            inFlight.incrementAndGet()
-            jobs[key] = scope.launch {
-                try {
-                    mcp.handle(message)?.let { send(it) }
-                } finally {
-                    inFlight.decrementAndGet()
-                    jobs.remove(key)
-                }
+            val job = scope.launch(start = CoroutineStart.LAZY) { mcp.handle(message)?.let { send(it) } }
+            jobs[key] = job
+            job.invokeOnCompletion {
+                inFlight.decrementAndGet()
+                jobs.remove(key, job)
             }
+            job.start()
         }
 
         private suspend fun notification(notification: JsonRpc.Notification, message: JsonElement) {

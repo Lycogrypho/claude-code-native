@@ -29,7 +29,7 @@ internal class SshTools(private val project: Project) {
     )
 
     private suspend fun hosts(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = mutableListOf<JsonObject>()
         val errors = mutableListOf<String>()
         for (provider in SshCredentialProvider.EP_NAME.extensionList) {

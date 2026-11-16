@@ -46,11 +46,11 @@
     }) as HTMLInputElement;
     findInput = input;
     findCount = el('span', { class: 'find-count' });
-    const closeBtn = el('span', {
+    const closeBtn = el('button', {
       class: 'find-x',
       text: '✕',
       title: 'Close',
-      attrs: { role: 'button' },
+      attrs: { type: 'button', 'aria-label': 'Close find' },
       on: {
         click: function (e: Event) {
           e.preventDefault();

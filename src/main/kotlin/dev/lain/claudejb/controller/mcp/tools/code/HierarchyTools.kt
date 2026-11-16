@@ -36,7 +36,7 @@ internal class HierarchyTools(private val project: Project) {
         val kind = args.string("kind")
         if (kind != CALLERS && kind != CALLEES) throw ToolException("kind must be $CALLERS or $CALLEES")
         val depth = args.int("depth", 1).coerceIn(1, MAX_DEPTH)
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val (root, rows) = try {
             readAction {
                 val target = Locations.declarationAt(project, args)

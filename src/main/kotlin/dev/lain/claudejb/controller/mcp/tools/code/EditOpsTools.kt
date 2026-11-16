@@ -61,7 +61,7 @@ internal class EditOpsTools(private val project: Project, private val reveal: Re
     private suspend fun searchReplace(args: ToolArgs): ToolResult {
         val query = args.string("query")
         val replacement = args.string("replacement")
-        val max = args.int("max", DEFAULT_MAX_FILES)
+        val max = args.limit("max", DEFAULT_MAX_FILES)
         val directory = readAction { args.optionalString("path")?.let { ReadTools.resolveDirectory(project, it).path } }
         val model = replace.model(query, replacement, args.boolean("regex", false), args.boolean("case_sensitive", false), directory)
         val explicit = args.strings("paths")

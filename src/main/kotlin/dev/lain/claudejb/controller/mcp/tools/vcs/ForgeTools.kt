@@ -42,7 +42,7 @@ internal class ForgeTools(
 
     private suspend fun pullRequests(args: ToolArgs): ToolResult {
         val state = args.optionalString("state") ?: "open"
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val filter = STATES[state] ?: throw ToolException("state must be one of ${STATES.keys.joinToString()}")
         val repository = github.repository()
         val requests = github.pullRequests(filter, max)

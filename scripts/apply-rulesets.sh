@@ -1,17 +1,4 @@
 #!/usr/bin/env bash
-# Apply the branch protection rulesets in .github/rulesets/ to the GitHub repository.
-#
-# Branch protection is the one part of the CI/CD setup that does NOT live in the repository by default —
-# it lives in a settings page, where it is invisible in review, undiffable, and silently editable. That
-# is a bad place for a control whose entire job is to be non-bypassable, so the rulesets are versioned
-# here and this script pushes them.
-#
-# Idempotent: a ruleset with a matching name is UPDATED, not duplicated. Safe to re-run.
-#
-#   ./scripts/apply-rulesets.sh            # apply
-#   ./scripts/apply-rulesets.sh --dry-run  # show what would change and exit
-#
-# Requires: gh (authenticated with admin rights on the repo) and jq.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -40,15 +27,6 @@ for file in .github/rulesets/*.json; do
     continue
   fi
 
-  # The JSON files carry `_comment` keys explaining the non-obvious choices — chiefly why the required
-  # approval count is 0 on a single-maintainer repo. Those keys are documentation, not API fields, so
-  # they are stripped here rather than risking a 422 on an unrecognised property.
-  #
-  # Every key with the `_comment` PREFIX, not just the exact name. Two comments cannot share one object
-  # under the exact-match version, so the moment a second annotation is needed in the same block the
-  # obvious move is to call it `_comment_<something>` — which then sails through this filter and gets
-  # rejected by the API as an unrecognised property. The 422 does not name the offending key, so the
-  # failure reads as "the ruleset is wrong" rather than "the comment leaked". Observed, not hypothetical.
   body=$(jq 'walk(if type == "object"
                   then with_entries(select(.key | startswith("_comment") | not))
                   else . end)' "$file")
@@ -64,9 +42,6 @@ done
 
 $dry_run && exit 0
 
-# Read back what is ACTUALLY in place rather than trusting that the writes above worked. The listing is
-# retried because the API is eventually consistent: read immediately after creating and it can come back
-# empty, which looks exactly like a failure and is not one.
 echo
 echo "Active rulesets:"
 for attempt in 1 2 3; do

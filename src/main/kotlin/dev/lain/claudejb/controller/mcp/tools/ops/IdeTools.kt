@@ -54,7 +54,7 @@ internal class IdeTools(private val project: Project, private val actions: IdeAc
     private suspend fun toolWindow(args: ToolArgs): ToolResult {
         val action = args.string("action")
         val id = args.optionalString("id").orEmpty()
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         if (action !in TOOL_WINDOW_ACTIONS) throw ToolException("action must be ${TOOL_WINDOW_ACTIONS.joinToString()}")
         if (action != "list" && id.isEmpty()) throw ToolException("action=$action needs id; action=list shows the ids")
         val rows = withContext(Dispatchers.EDT) {
@@ -108,7 +108,7 @@ internal class IdeTools(private val project: Project, private val actions: IdeAc
     }
 
     private suspend fun plugins(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val filter = args.optionalString("filter").orEmpty()
         val matching = PluginDetailsGateway.activePlugins()
             .filter { filter.isEmpty() || matches(it, filter) }

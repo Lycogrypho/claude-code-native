@@ -32,7 +32,7 @@ internal class WorkspaceTools(private val project: Project) {
 
     private suspend fun workspace(args: ToolArgs): ToolResult {
         val kind = args.optionalString("entity_type") ?: "module"
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val type = ENTITY_TYPES[kind] ?: throw ToolException("entity_type must be one of ${ENTITY_TYPES.keys.joinToString()}")
         val rows = readAction {
             WorkspaceModel.getInstance(project).currentSnapshot.entities(type).map(::row).toList()

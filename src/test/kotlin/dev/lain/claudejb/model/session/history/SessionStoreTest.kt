@@ -34,6 +34,28 @@ class SessionStoreTest {
     }
 
     @Test
+    fun `a transcript with an undecodable byte still gives every line`() {
+        val home = Files.createTempDirectory("claudejb-home")
+        val originalHome = System.getProperty("user.home")
+        try {
+            val projectDir = Files.createDirectories(home.resolve(".claude").resolve("projects").resolve("-tmp-proj"))
+            val id = "22222222-2222-3333-4444-555555555555"
+            val cutMidCharacter = "{\"a\":1}\n{\"b\":\"caf".toByteArray() + byteArrayOf(0xC3.toByte()) + "\n{\"c\":3}\n".toByteArray()
+            Files.write(projectDir.resolve("$id.jsonl"), cutMidCharacter)
+            System.setProperty("user.home", home.toString())
+
+            val lines = SessionStore.readLines(id)!!
+            assertEquals(3, lines.size)
+            assertEquals("{\"a\":1}", lines.first())
+            assertEquals("{\"c\":3}", lines.last())
+            assertTrue(lines[1].startsWith("{\"b\":\"caf"))
+        } finally {
+            System.setProperty("user.home", originalHome)
+            Files.walk(home).sorted(Comparator.reverseOrder()).forEach { Files.deleteIfExists(it) }
+        }
+    }
+
+    @Test
     fun `locate finds the transcript without removing anything`() {
         val home = Files.createTempDirectory("claudejb-home")
         val originalHome = System.getProperty("user.home")

@@ -55,26 +55,10 @@
   }
   TX.scheduleScroll = scheduleScroll;
 
-  function subscribe(): boolean {
-    if (!CC.on) {
-      return false;
+  CC.on('follow', function (b) {
+    followFlag = !!b;
+    if (followFlag) {
+      scheduleScroll(true);
     }
-    CC.on('follow', function (b) {
-      followFlag = !!b;
-      if (followFlag) {
-        scheduleScroll(true);
-      }
-    });
-    return true;
-  }
-
-  if (!subscribe()) {
-    let tries = 0;
-    const iv = setInterval(function () {
-      tries++;
-      if (subscribe() || tries > 50) {
-        clearInterval(iv);
-      }
-    }, 20);
-  }
+  });
 })();

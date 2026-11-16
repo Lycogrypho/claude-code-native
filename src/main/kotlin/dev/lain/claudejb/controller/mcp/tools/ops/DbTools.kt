@@ -35,7 +35,7 @@ internal class DbTools(project: Project, private val gateway: DbGateway = DbGate
     }
 
     private suspend fun connections(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val all = readAction { gateway.connections() }
         return ToolResult.toon(
             buildJsonObject {
@@ -62,7 +62,7 @@ internal class DbTools(project: Project, private val gateway: DbGateway = DbGate
     private suspend fun schema(args: ToolArgs): ToolResult {
         val connection = args.string("connection")
         val table = args.optionalString("table")
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val rows = readAction {
             if (table == null) gateway.tables(connection).map(::tableRow) else gateway.columns(connection, table).map(::columnRow)
         }
@@ -94,7 +94,7 @@ internal class DbTools(project: Project, private val gateway: DbGateway = DbGate
     private suspend fun queryOne(args: ToolArgs): JsonObject {
         val connection = args.string("connection")
         val sql = args.string("code")
-        val max = args.int("max", DEFAULT_MAX).coerceIn(1, MAX_ROWS)
+        val max = args.limit("max", DEFAULT_MAX, MAX_ROWS)
         val result = runInterruptible(Dispatchers.IO) { gateway.query(connection, sql, max, QUERY_TIMEOUT_SECONDS) }
         val labels = labels(result.columns)
         return buildJsonObject {

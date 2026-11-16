@@ -94,7 +94,7 @@ interface TranscriptNs {
   renderToolLabel(nameEl: HTMLElement | null, text: unknown, filePath: unknown): void;
   requestLinks(rec: RowRec, entry: TranscriptEntry): void;
   runSearch(q: string | null | undefined, silent: boolean): void;
-  refreshSearch(): void;
+  refreshSearch(ids?: unknown[]): void;
   resetSearch(): void;
   findNext(): void;
   findPrev(): void;

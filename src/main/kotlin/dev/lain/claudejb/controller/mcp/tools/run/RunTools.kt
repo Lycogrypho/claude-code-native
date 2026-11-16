@@ -44,7 +44,7 @@ internal class RunTools(private val project: Project, scope: CoroutineScope) {
     }
 
     private suspend fun runConfigurations(args: ToolArgs): ToolResult {
-        val max = args.int("max", DEFAULT_MAX)
+        val max = args.limit("max", DEFAULT_MAX)
         val (rows, total) = readAction {
             val manager = RunManager.getInstance(project)
             val selected = manager.selectedConfiguration?.uniqueID
@@ -92,7 +92,7 @@ internal class RunTools(private val project: Project, scope: CoroutineScope) {
         ?: throw ToolException("executor must be one of ${EXECUTORS.keys.joinToString()}")
 
     private suspend fun processes(args: ToolArgs): ToolResult = when (val action = args.optionalString("action") ?: "list") {
-        "list" -> list(args.int("max", DEFAULT_MAX))
+        "list" -> list(args.limit("max", DEFAULT_MAX))
         "stop" -> stop(args.string("name"))
         else -> throw ToolException("action must be list or stop, not $action")
     }
